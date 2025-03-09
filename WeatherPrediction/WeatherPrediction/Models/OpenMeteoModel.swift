@@ -6,17 +6,18 @@
 //
 
 import Alamofire
+import Constants
 import Foundation
 
-struct Time: Decodable, DataDecoder {
+struct Time: Decodable, DataDecoder, AlamofireDecodable {
     let year: Int
     let month: Int
     let day: Int
     let hour: Int
     
-    init?(from dateString: String) {
+    init?(from dateString: String, withDateFormat dateFormat: String) {
         let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm"
+        dateFormatter.dateFormat = dateFormat
 
         guard let date = dateFormatter.date(from: dateString) else { return nil }
 
@@ -26,28 +27,19 @@ struct Time: Decodable, DataDecoder {
         self.day = calendar.component(.day, from: date)
         self.hour = calendar.component(.hour, from: date)
     }
-    
-    func decode<D>(_ type: D.Type, from data: Data) throws -> D where D : Decodable {
-        let decoder = JSONDecoder()
-        return try decoder.decode(D.self, from: data)
-    }
 }
 
-struct Hourly: Decodable, DataDecoder {
-    var time: [Time]
-    var temperature: [Double]
-    var apparentTemperature: [Double]
-    var precipitation: [Double]
-    var rain: [Double]
-    var showers: [Double]
+struct Hourly: Decodable, DataDecoder, AlamofireDecodable {
+    let time: [Time]
+    let temp: [Double]
+    let feelLikeTemp: [Double]
+    let precipProb: [Int]
     
     enum CodingKeys: String, CodingKey {
         case time
-        case temperature = "temperature_2m"
-        case apparentTemperature = "apparent_temperature"
-        case precipitation
-        case rain
-        case showers
+        case temp = "temperature_2m"
+        case feelLikeTemp = "apparent_temperature"
+        case precipProb = "precipitation_probability"
     }
     
     init(from decoder: Decoder) throws {
@@ -55,32 +47,17 @@ struct Hourly: Decodable, DataDecoder {
         
         let dateStringArray = try container.decodeIfPresent([String].self, forKey: .time) ?? []
         
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm"
-        
-        self.time = dateStringArray.compactMap { Time(from: $0) }
-        self.temperature = try container.decodeIfPresent([Double].self, forKey: .temperature) ?? []
-        self.apparentTemperature = try container.decodeIfPresent([Double].self, forKey: .apparentTemperature) ?? []
-        self.precipitation = try container.decodeIfPresent([Double].self, forKey: .precipitation) ?? []
-        self.rain = try container.decodeIfPresent([Double].self, forKey: .rain) ?? []
-        self.showers = try container.decodeIfPresent([Double].self, forKey: .showers) ?? []
-    }
-    
-    func decode<D>(_ type: D.Type, from data: Data) throws -> D where D : Decodable {
-        let decoder = JSONDecoder()
-        return try decoder.decode(D.self, from: data)
+        self.time = dateStringArray.compactMap { Time(from: $0, withDateFormat: Constants.OpenMeteo.dateFormat) }
+        self.temp = try container.decodeIfPresent([Double].self, forKey: .temp) ?? []
+        self.feelLikeTemp = try container.decodeIfPresent([Double].self, forKey: .feelLikeTemp) ?? []
+        self.precipProb = try container.decodeIfPresent([Int].self, forKey: .precipProb) ?? []
     }
 }
 
-struct OpenMeteoModel: Decodable, DataDecoder {
-    func decode<D>(_ type: D.Type, from data: Data) throws -> D where D : Decodable {
-        let decoder = JSONDecoder()
-        return try decoder.decode(D.self, from: data)
-    }
-    
-    var latitude: Double
-    var longitude: Double
-    var hourly: Hourly
+struct OpenMeteoModel: Decodable, DataDecoder, AlamofireDecodable {
+    let latitude: Double
+    let longitude: Double
+    let hourly: Hourly
     
     enum CodingKeys: String, CodingKey {
         case latitude

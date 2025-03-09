@@ -21,17 +21,51 @@ class OpenMeteoViewModel {
         components.queryItems = [
             URLQueryItem(name: "latitude", value: "\(latitude)"),
             URLQueryItem(name: "longitude", value: "\(longitude)"),
-            URLQueryItem(name: "hourly", value: Constants.OpenMeteo.hourly)
+            URLQueryItem(name: "hourly", value: Constants.OpenMeteo.hourly),
+            URLQueryItem(name: "forecast_days", value: "14")
         ]
         
         return components.url?.absoluteString
     }
     
-    func fetch() {
+    func fetchData() {
         if let url = buildURL(latitude: 46.75, longitude: 23.57) {
             AF.request(url).responseDecodable(of: OpenMeteoModel.self) { response in
                 guard let result = response.value else { return }
-                print(result.hourly)
+                print("OpenMeteo: \(result.hourly.time.count)")
+            }
+        }
+    }
+}
+
+@Observable
+class WeatherAPIViewModel {
+    
+    func buildURL(latitude: Double, longitude: Double) -> String? {
+        var components = URLComponents()
+        components.scheme = Constants.urlScheme
+        components.host = Constants.WeatherAPI.host
+        components.path = Constants.WeatherAPI.path
+        
+        components.queryItems = [
+            URLQueryItem(name: "key", value: "\(Constants.WeatherAPI.apiKey)"),
+            URLQueryItem(name: "q", value: "\(latitude) \(longitude)"),
+            URLQueryItem(name: "days", value: "14"),
+            URLQueryItem(name: "aqi", value: "no"),
+            URLQueryItem(name: "alerts", value: "no")
+        ]
+        
+        return components.url?.absoluteString
+    }
+    
+    func fetchData() {
+        if let url = buildURL(latitude: 46.75, longitude: 23.57) {
+            AF.request(url).responseDecodable(of: WeatherAPIModel.self) { response in
+                guard let result = response.value else { return }
+                let totalData = result.forecast.forecastday.reduce(into: 0) { result, element in
+                    result += element.hour.count
+                }
+                print("WeatherAPI: \(totalData)")
             }
         }
     }
@@ -39,12 +73,14 @@ class OpenMeteoViewModel {
 
 struct ContentView: View {
     @State private var openVm = OpenMeteoViewModel()
+    @State private var weatherVM = WeatherAPIViewModel()
     var body: some View {
         VStack {
             Text("Fetchiiiiing")
         }
         .onAppear {
-            openVm.fetch()
+            openVm.fetchData()
+            weatherVM.fetchData()
         }
     }
 }
