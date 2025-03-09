@@ -12,23 +12,23 @@ import SwiftUI
 @Observable
 class OpenMeteoViewModel {
     
-    func buildWeatherURL(latitude: Double, longitude: Double) -> String? {
+    func buildURL(latitude: Double, longitude: Double) -> String? {
         var components = URLComponents()
-        components.scheme = "https"
-        components.host = "api.open-meteo.com"
-        components.path = "/v1/forecast"
+        components.scheme = Constants.urlScheme
+        components.host = Constants.OpenMeteo.host
+        components.path = Constants.OpenMeteo.path
         
         components.queryItems = [
             URLQueryItem(name: "latitude", value: "\(latitude)"),
             URLQueryItem(name: "longitude", value: "\(longitude)"),
-            URLQueryItem(name: "hourly", value: "temperature_2m,apparent_temperature,precipitation,rain,showers")
+            URLQueryItem(name: "hourly", value: Constants.OpenMeteo.hourly)
         ]
         
         return components.url?.absoluteString
     }
     
     func fetch() {
-        if let url = buildWeatherURL(latitude: 46.75, longitude: 23.57) {
+        if let url = buildURL(latitude: 46.75, longitude: 23.57) {
             AF.request(url).responseDecodable(of: OpenMeteoModel.self) { response in
                 guard let result = response.value else { return }
                 print(result.hourly)
