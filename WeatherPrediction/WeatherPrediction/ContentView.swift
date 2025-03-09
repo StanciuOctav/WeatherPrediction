@@ -10,7 +10,7 @@ import Constants
 import SwiftUI
 
 @Observable
-class OpenMeteoViewModel {
+class OpenMeteoViewModel: NetworkProtocol {
     
     func buildURL(latitude: Double, longitude: Double) -> String? {
         var components = URLComponents()
@@ -28,7 +28,7 @@ class OpenMeteoViewModel {
         return components.url?.absoluteString
     }
     
-    func fetchData() {
+    func fetchWeatherData(latitude: Double, longitude: Double) {
         if let url = buildURL(latitude: 46.75, longitude: 23.57) {
             AF.request(url).responseDecodable(of: OpenMeteoModel.self) { response in
                 guard let result = response.value else { return }
@@ -39,7 +39,7 @@ class OpenMeteoViewModel {
 }
 
 @Observable
-class WeatherAPIViewModel {
+class WeatherAPIViewModel: NetworkProtocol {
     
     func buildURL(latitude: Double, longitude: Double) -> String? {
         var components = URLComponents()
@@ -58,7 +58,7 @@ class WeatherAPIViewModel {
         return components.url?.absoluteString
     }
     
-    func fetchData() {
+    func fetchWeatherData(latitude: Double, longitude: Double) {
         if let url = buildURL(latitude: 46.75, longitude: 23.57) {
             AF.request(url).responseDecodable(of: WeatherAPIModel.self) { response in
                 guard let result = response.value else { return }
@@ -79,8 +79,8 @@ struct ContentView: View {
             Text("Fetchiiiiing")
         }
         .onAppear {
-            openVm.fetchData()
-            weatherVM.fetchData()
+            openVm.fetchWeatherData(latitude: 46.75, longitude: 23.57)
+            weatherVM.fetchWeatherData(latitude: 46.75, longitude: 23.57)
         }
     }
 }
