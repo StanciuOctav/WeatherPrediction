@@ -7,6 +7,8 @@
 
 import Foundation
 
-protocol NetworkProtocol {
-    func fetchWeatherData(latitude: Double, longitude: Double)
+protocol NetworkProtocol<T> {
+    associatedtype T
+    
+    func fetchWeatherData(latitude: Double, longitude: Double) async -> T
 }

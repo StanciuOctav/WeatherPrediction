@@ -9,11 +9,15 @@ import Alamofire
 import Constants
 import Foundation
 
-struct Time: Decodable, DataDecoder, AlamofireDecodable {
+struct Time: Decodable, DataDecoder, AlamofireDecodable, CustomStringConvertible {
     let year: Int
     let month: Int
     let day: Int
     let hour: Int
+    
+    var description: String {
+        "\(year) \(month) \(day) \(hour)\n"
+    }
     
     init?(from dateString: String, withDateFormat dateFormat: String) {
         let dateFormatter = DateFormatter()
