@@ -9,30 +9,6 @@ import Alamofire
 import Constants
 import Foundation
 
-struct Time: Decodable, DataDecoder, AlamofireDecodable, CustomStringConvertible {
-    let year: Int
-    let month: Int
-    let day: Int
-    let hour: Int
-    
-    var description: String {
-        "\(year) \(month) \(day) \(hour)\n"
-    }
-    
-    init?(from dateString: String, withDateFormat dateFormat: String) {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = dateFormat
-
-        guard let date = dateFormatter.date(from: dateString) else { return nil }
-
-        let calendar = Calendar(identifier: .gregorian)
-        self.year = calendar.component(.year, from: date)
-        self.month = calendar.component(.month, from: date)
-        self.day = calendar.component(.day, from: date)
-        self.hour = calendar.component(.hour, from: date)
-    }
-}
-
 struct Hourly: Decodable, DataDecoder, AlamofireDecodable {
     let time: [Time]
     let temp: [Double]

@@ -12,24 +12,47 @@ import SwiftUI
 @Observable
 class ContentViewModel {
     
-    let openNM: any NetworkProtocol
-    let weatherNM: any NetworkProtocol
+    @ObservationIgnored private let openNM: any NetworkProtocol
+    @ObservationIgnored private let weatherNM: any NetworkProtocol
+    @ObservationIgnored private var mlModel: MLModel
     
     init(openNM: any NetworkProtocol, weatherNM: any NetworkProtocol) {
         self.openNM = openNM
         self.weatherNM = weatherNM
+        self.mlModel = MLModel(latitude: 46.75, longitude: 23.57)
     }
 
-    func fetchWeatherData(latitude: Double, longitude: Double) async {
-        async let openModelCall = openNM.fetchWeatherData(latitude: latitude, longitude: longitude)
-        async let weatherModelCall = weatherNM.fetchWeatherData(latitude: latitude, longitude: longitude)
+    func fetchWeatherData() async {
+        async let openModelCall = openNM.fetchWeatherData(latitude: mlModel.latitude, longitude: mlModel.longitude)
+        async let weatherModelCall = weatherNM.fetchWeatherData(latitude: mlModel.latitude, longitude: mlModel.longitude)
         
         let (openModel, weatherModel) = await (openModelCall, weatherModelCall)
         
         guard let openModel = openModel as? OpenMeteoModel,
               let weatherModel = weatherModel as? WeatherAPIModel else { return }
+        
+        buildMLModel(openModel: openModel, weatherModel: weatherModel)
     }
     
+    func buildMLModel(openModel: OpenMeteoModel, weatherModel: WeatherAPIModel) {
+        for i in 0..<openModel.hourly.time.count {
+            let currentTime = openModel.hourly.time[i]
+            mlModel.omTemp[currentTime] = openModel.hourly.temp[i]
+            mlModel.omFeelLike[currentTime] = openModel.hourly.feelLikeTemp[i]
+            mlModel.omPrecipProb[currentTime] = openModel.hourly.precipProb[i]
+        }
+        
+        for forecastDay in weatherModel.forecast.forecastday {
+            for hour in forecastDay.hour {
+                mlModel.wTemp[hour.time] = hour.temp
+                mlModel.wFeelLike[hour.time] = hour.feelLikeTemp
+                mlModel.wPrecipProb[hour.time] = hour.precipProb
+            }
+        }
+        
+        print(mlModel.omTemp.count)
+        print(mlModel.wTemp.count)
+    }
 }
 
 struct ContentView: View {
@@ -44,7 +67,7 @@ struct ContentView: View {
             Text("Fetchiiiiing")
         }
         .task {
-            await vm.fetchWeatherData(latitude: 46.75, longitude: 23.57)
+            await vm.fetchWeatherData()
         }
     }
 }
