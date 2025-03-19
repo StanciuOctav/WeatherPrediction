@@ -10,6 +10,7 @@ import Foundation
 struct MLModel {
     var latitude: Double
     var longitude: Double
+    var time: [Time] = []
     
     // OpenWeather data
     var omTemp: [Time: Double] = [:]

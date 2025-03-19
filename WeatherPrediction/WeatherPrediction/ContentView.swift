@@ -47,11 +47,43 @@ class ContentViewModel {
                 mlModel.wTemp[hour.time] = hour.temp
                 mlModel.wFeelLike[hour.time] = hour.feelLikeTemp
                 mlModel.wPrecipProb[hour.time] = hour.precipProb
+                mlModel.time.append(hour.time)
             }
         }
         
-        print(mlModel.omTemp.count)
-        print(mlModel.wTemp.count)
+        mlModel.time.sort { $0 < $1 }
+        
+        exportToCSV()
+    }
+    
+    func exportToCSV() {
+        var csvString = "Time,Latitude,Longitude,omTemp,omFeelLike,omPrecipProb,wTemp,wFeelLike,wPrecipProb\n"
+
+        // Iterate through all unique Time values
+        for time in mlModel.time {
+            let timeString = "\(time.year)-\(time.month)-\(time.day) \(time.hour):00"
+
+            let omTemp = mlModel.omTemp[time] ?? Double.nan
+            let omFeelLike = mlModel.omFeelLike[time] ?? Double.nan
+            let omPrecipProb = mlModel.omPrecipProb[time] ?? -1
+
+            let wTemp = mlModel.wTemp[time] ?? Double.nan
+            let wFeelLike = mlModel.wFeelLike[time] ?? Double.nan
+            let wPrecipProb = mlModel.wPrecipProb[time] ?? -1
+
+            let row = "\(timeString),\(mlModel.latitude),\(mlModel.longitude),\(omTemp),\(omFeelLike),\(omPrecipProb),\(wTemp),\(wFeelLike),\(wPrecipProb)\n"
+            csvString.append(row)
+        }
+
+        // Get the file path for the CSV file
+        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("ModelData.csv")
+
+        do {
+            try csvString.write(to: fileURL, atomically: true, encoding: .utf8)
+            print("CSV file saved at: \(fileURL.path)")
+        } catch {
+            print("Failed to save CSV: \(error)")
+        }
     }
 }
 

@@ -9,7 +9,7 @@ import Alamofire
 import Constants
 import Foundation
 
-struct Time: Decodable, DataDecoder, AlamofireDecodable, CustomStringConvertible, Hashable {
+struct Time: Decodable, DataDecoder, AlamofireDecodable, CustomStringConvertible {
     let year: Int
     let month: Int
     let day: Int
@@ -32,7 +32,23 @@ struct Time: Decodable, DataDecoder, AlamofireDecodable, CustomStringConvertible
         self.day = calendar.component(.day, from: date)
         self.hour = calendar.component(.hour, from: date)
     }
-    
+}
+
+extension Time: Comparable {
+    static func < (lhs: Time, rhs: Time) -> Bool {
+        if lhs.year != rhs.year {
+            return lhs.year < rhs.year
+        } else if lhs.month != rhs.month {
+            return lhs.month < rhs.month
+        } else if lhs.day != rhs.day {
+            return lhs.day < rhs.day
+        } else {
+            return lhs.hour < rhs.hour
+        }
+    }
+}
+
+extension Time: Hashable {
     func hash(into hasher: inout Hasher) {
         hasher.combine(year)
         hasher.combine(month)
