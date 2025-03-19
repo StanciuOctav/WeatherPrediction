@@ -99,7 +99,9 @@ struct ContentView: View {
             Text("Fetchiiiiing")
         }
         .task {
-            await vm.fetchWeatherData()
+            Task.detached(priority: .background, operation: {
+                await vm.fetchWeatherData()
+            })
         }
     }
 }
