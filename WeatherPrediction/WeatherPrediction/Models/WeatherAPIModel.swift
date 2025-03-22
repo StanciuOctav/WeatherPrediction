@@ -39,15 +39,15 @@ struct ForecastDay: Decodable, DataDecoder, AlamofireDecodable {
 }
 
 struct Forecast: Decodable, DataDecoder, AlamofireDecodable {
-    let forecastday: [ForecastDay]
+    var forecastday: [ForecastDay] = []
 }
 
 struct Location: Decodable, DataDecoder, AlamofireDecodable {
-    let lat: Double
-    let lon: Double
+    var lat: Double = 0
+    var lon: Double = 0
 }
 
 struct WeatherAPIModel: Decodable, DataDecoder, AlamofireDecodable {
-    let location: Location
-    let forecast: Forecast
+    var location: Location = Location()
+    var forecast: Forecast = Forecast()
 }

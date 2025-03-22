@@ -23,13 +23,16 @@ class ContentViewModel {
     }
 
     func fetchWeatherData() async {
-        async let openModelCall = openNM.fetchWeatherData(latitude: mlModel.latitude, longitude: mlModel.longitude)
-        async let weatherModelCall = weatherNM.fetchWeatherData(latitude: mlModel.latitude, longitude: mlModel.longitude)
+        async let openModelCall = openNM.fetchWeatherData(latitude: mlModel.latitude, longitude: mlModel.longitude, forDates: [])
+        async let weatherModelCall = weatherNM.fetchWeatherData(latitude: mlModel.latitude, longitude: mlModel.longitude, forDates: Calendar.last14Days + [Calendar.tomorrow])
         
         let (openModel, weatherModel) = await (openModelCall, weatherModelCall)
         
         guard let openModel = openModel as? OpenMeteoModel,
               let weatherModel = weatherModel as? WeatherAPIModel else { return }
+        
+        print("OpenModel: \(openModel.hourly.time.last!)")
+        print("Weather: \(weatherModel.forecast.forecastday.count)")
         
         buildMLModel(openModel: openModel, weatherModel: weatherModel)
     }

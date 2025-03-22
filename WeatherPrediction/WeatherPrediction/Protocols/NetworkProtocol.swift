@@ -10,5 +10,5 @@ import Foundation
 protocol NetworkProtocol<T> {
     associatedtype T
     
-    func fetchWeatherData(latitude: Double, longitude: Double) async -> T
+    func fetchWeatherData(latitude: Double, longitude: Double, forDates dates: [String]) async -> T
 }
