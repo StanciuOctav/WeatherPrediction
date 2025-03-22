@@ -21,7 +21,6 @@ extension Calendar {
         formatter.locale = Locale(identifier: "en_US_POSIX")
         
         let formattedDates = last14Days.map { formatter.string(from: $0) }
-        print(formattedDates)
         
         return formattedDates
     }

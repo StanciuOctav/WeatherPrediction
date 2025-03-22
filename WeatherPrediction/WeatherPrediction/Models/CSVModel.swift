@@ -1,5 +1,5 @@
 //
-//  MLModel.swift
+//  CSVModel.swift
 //  WeatherPrediction
 //
 //  Created by Octav Stanciu on 16.03.2025.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct MLModel {
+struct CSVModel {
     var latitude: Double
     var longitude: Double
     var time: [Time] = []
