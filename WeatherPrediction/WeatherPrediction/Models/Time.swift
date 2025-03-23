@@ -16,7 +16,7 @@ struct Time: Decodable, DataDecoder, AlamofireDecodable, CustomStringConvertible
     let hour: Int
     
     var description: String {
-        "\(year) \(month) \(day) \(hour)\n"
+        "\(year)-\(month)-\(day)-\(hour)\n"
     }
     
     init?(from dateString: String, withDateFormat dateFormat: String) {
@@ -31,6 +31,12 @@ struct Time: Decodable, DataDecoder, AlamofireDecodable, CustomStringConvertible
         self.month = calendar.component(.month, from: date)
         self.day = calendar.component(.day, from: date)
         self.hour = calendar.component(.hour, from: date)
+    }
+}
+
+extension Time: Identifiable {
+    var id: String {
+        UUID().uuidString
     }
 }
 

@@ -16,8 +16,8 @@ public struct Constants {
         public static let host = "api.weatherapi.com"
         public static let historyPath = "/v1/history.json"
         public static let forecastPath = "/v1/forecast.json"
-        public static let apiKey = "f4248efc801c49a484a114129250903"
-//        public static let base = "https://api.weatherapi.com/v1/forecast.json?key=f4248efc801c49a484a114129250903&q=46.75%2023.57&days=14&aqi=no&alerts=no"
+        public static let apiKey = "6de4607f8180463f9b774209252303"
+//        public static let base = "https://api.weatherapi.com/v1/forecast.json?key=6de4607f8180463f9b774209252303&q=46.75%2023.57&days=14&aqi=no&alerts=no"
         public static let dateFormat = "yyyy-MM-dd HH:mm"
     }
 }

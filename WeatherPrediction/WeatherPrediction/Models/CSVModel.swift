@@ -7,18 +7,27 @@
 
 import Foundation
 
-struct CSVModel {
+struct CSVModel: Identifiable, Hashable {
+    
+    var id: String {
+        UUID().uuidString
+    }
+    
     var latitude: Double
     var longitude: Double
-    var time: [Time] = []
+    var time: Time?
     
     // OpenWeather data
-    var omTemp: [Time: Double] = [:]
-    var omFeelLike: [Time: Double] = [:]
-    var omPrecipProb: [Time: Int] = [:]
+    var omTemp: Double = -100
+    var omFeelLike: Double = -100
+    var omPrecipProb: Int = -100
     
     // WeatherAPI data
-    var wTemp: [Time: Double] = [:]
-    var wFeelLike: [Time: Double] = [:]
-    var wPrecipProb: [Time: Int] = [:]
+    var wTemp: Double = -100
+    var wFeelLike: Double = -100
+    var wPrecipProb: Int = -100
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
 }
