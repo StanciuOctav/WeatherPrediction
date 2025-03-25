@@ -186,9 +186,9 @@ class ContentViewModel {
                                                month: components.month ?? 0,
                                                day: components.day ?? 0,
                                                hour: hour),
-                                    pTemp: -100,
-                                    pFeelLike: -100,
-                                    pPrecipProb: -100
+                                    pTemp: 0,
+                                    pFeelLike: 0,
+                                    pPrecipProb: 0
                                 ))
                                 predictedCSVModels[predictedCSVModels.count - 1][keyPath: keyPath] = predictedValue
                             }

@@ -18,19 +18,19 @@ struct CSVModel: Identifiable, Hashable {
     var time: Time?
     
     // OpenWeather data
-    var omTemp: Double = -100
-    var omFeelLike: Double = -100
-    var omPrecipProb: Int = -100
+    var omTemp: Double = 0
+    var omFeelLike: Double = 0
+    var omPrecipProb: Int = 0
     
     // WeatherAPI data
-    var wTemp: Double = -100
-    var wFeelLike: Double = -100
-    var wPrecipProb: Int = -100
+    var wTemp: Double = 0
+    var wFeelLike: Double = 0
+    var wPrecipProb: Int = 0
     
     // Predicted data
-    var pTemp: Double = -100
-    var pFeelLike: Double = -100
-    var pPrecipProb: Double = -100
+    var pTemp: Double = 0
+    var pFeelLike: Double = 0
+    var pPrecipProb: Double = 0
     
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
