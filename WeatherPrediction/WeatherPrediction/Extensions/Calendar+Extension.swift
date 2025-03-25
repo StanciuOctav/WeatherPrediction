@@ -34,4 +34,10 @@ extension Calendar {
         formatter.locale = Locale(identifier: "en_US_POSIX")
         return formatter.string(from: tomorrow)
     }
+    
+    public static var tomorrowDate: Date {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        return calendar.date(byAdding: .day, value: 1, to: today)!
+    }
 }

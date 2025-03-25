@@ -2,6 +2,8 @@
 // https://docs.swift.org/swift-book
 public struct Constants {
     public static let urlScheme = "https"
+    public static let longitude = 46.75
+    public static let latitude = 23.57
     
     // https://open-meteo.com/en/docs#hourly=temperature_2m,apparent_temperature,precipitation&past_days=14&forecast_days=1
     public struct OpenMeteo {

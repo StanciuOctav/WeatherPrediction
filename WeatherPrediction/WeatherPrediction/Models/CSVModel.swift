@@ -27,6 +27,11 @@ struct CSVModel: Identifiable, Hashable {
     var wFeelLike: Double = -100
     var wPrecipProb: Int = -100
     
+    // Predicted data
+    var pTemp: Double = -100
+    var pFeelLike: Double = -100
+    var pPrecipProb: Double = -100
+    
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }

@@ -32,6 +32,13 @@ struct Time: Decodable, DataDecoder, AlamofireDecodable, CustomStringConvertible
         self.day = calendar.component(.day, from: date)
         self.hour = calendar.component(.hour, from: date)
     }
+    
+    init?(year: Int, month: Int, day: Int, hour: Int) {
+        self.year = year
+        self.month = month
+        self.day = day
+        self.hour = hour
+    }
 }
 
 extension Time: Identifiable {

@@ -8,12 +8,12 @@
 import SwiftUI
 
 fileprivate enum PickerSection {
-    case openMeteo, weatherAPI, prediction, all
+    case openMeteo, weatherAPI, prediction
 }
 
 struct ContentView: View {
     @State private var vm: ContentViewModel
-    @State private var selectedSection: PickerSection = .openMeteo
+    @State private var selectedSection: PickerSection = .prediction
     
     init() {
         self.vm = ContentViewModel(openNM: OpenMeteoNetworkManager(), weatherNM: WeatherAPINetworkManager())
@@ -22,32 +22,55 @@ struct ContentView: View {
     var body: some View {
         VStack {
             Picker(selection: $selectedSection, content: {
+                Text("Predicted").tag(PickerSection.prediction)
                 Text("OpenMeteo").tag(PickerSection.openMeteo)
                 Text("WeatherAPI").tag(PickerSection.weatherAPI)
-                Text("Predicted").tag(PickerSection.prediction)
-                Text("All").tag(PickerSection.all)
             }, label: {
                 Text("Choose data source")
             })
             .pickerStyle(.segmented)
             
-            List(vm.mlModel, id:\.id) { model in
-                VStack(alignment: .leading) {
-                    HStack {
-                    Text(model.time?.description ?? "N/A")
-                        .bold()
-                        Spacer()
-                        VStack {
-                            Text("Temp: \(temp(from: model)))")
-                            Text("FeelsLike: \(feelLike(from: model))")
-                            Text("Precip Prob: \(precipProb(from: model))%")
+            if selectedSection == .openMeteo || selectedSection == .weatherAPI {
+                List(vm.mlModel, id:\.id) { model in
+                    VStack(alignment: .leading) {
+                        HStack {
+                            Text(model.time?.description ?? "N/A")
+                                .bold()
+                            Spacer()
+                            
+                            VStack {
+                                Text("Temp: \(temp(from: model))")
+                                Text("FeelsLike: \(feelLike(from: model))")
+                                Text("Precip Prob: \(precipProb(from: model))")
+                            }
+                            
                         }
                     }
+                    .padding()
                 }
-                .padding()
+                .scrollContentBackground(.hidden)
+                .background(.regularMaterial)
+            } else {
+                List(vm.predictedCSVModels, id:\.id) { model in
+                    VStack(alignment: .leading) {
+                        HStack {
+                            Text(model.time?.description ?? "N/A")
+                                .bold()
+                            Spacer()
+                            
+                            VStack {
+                                Text("Temp: \(temp(from: model))")
+                                Text("FeelsLike: \(feelLike(from: model))")
+                                Text("Precip Prob: \(precipProb(from: model))")
+                            }
+                        }
+                    }
+                    .padding()
+                }
+                .scrollContentBackground(.hidden)
+                .background(.regularMaterial)
+                
             }
-            .scrollContentBackground(.hidden)
-            .background(.regularMaterial)
         }
         .padding(.vertical)
         .task {
@@ -57,43 +80,43 @@ struct ContentView: View {
         }
     }
     
-    private func temp(from model: CSVModel) -> Double {
+    private func temp(from model: CSVModel) -> String {
+        let value: Double
         switch selectedSection {
         case .openMeteo:
-            model.omTemp
+            value = model.omTemp
         case .weatherAPI:
-            model.wTemp
+            value = model.wTemp
         case .prediction:
-            0
-        case .all:
-            0
+            value = model.pTemp
         }
+        return String(format: "%.2f", value)
     }
-    
-    private func feelLike(from model: CSVModel) -> Double {
+
+    private func feelLike(from model: CSVModel) -> String {
+        let value: Double
         switch selectedSection {
         case .openMeteo:
-            model.wTemp
+            value = model.wTemp
         case .weatherAPI:
-            model.wFeelLike
+            value = model.wFeelLike
         case .prediction:
-            0
-        case .all:
-            0
+            value = model.pFeelLike
         }
+        return String(format: "%.2f", value)
     }
-    
-    private func precipProb(from model: CSVModel) -> Int {
+
+    private func precipProb(from model: CSVModel) -> String {
+        let value: Double
         switch selectedSection {
         case .openMeteo:
-            model.omPrecipProb
+            value = Double(model.omPrecipProb)
         case .weatherAPI:
-            model.wPrecipProb
+            value = Double(model.wPrecipProb)
         case .prediction:
-            0
-        case .all:
-            0
+            value = model.pPrecipProb
         }
+        return String(format: "%.2f", value) + "%"
     }
 }
 
