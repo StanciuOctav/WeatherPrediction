@@ -14,12 +14,32 @@ import CreateML
 import SwiftUI
 import TabularData
 
+enum RegressorType: Identifiable, CaseIterable {
+    var id: String { UUID().uuidString }
+    
+    case linear, randomForrest, boostedTree, decisionTree
+    
+    var description: String {
+        switch self {
+        case .linear:
+            return "Linear Regression"
+        case .randomForrest:
+            return "Random Forrest Regression"
+        case .boostedTree:
+            return "Boosting Tree Regression"
+        case .decisionTree:
+            return "Decision Tree Regression"
+        }
+    }
+}
+
 @Observable
 class ContentViewModel {
     
     @ObservationIgnored private let openNM: any NetworkProtocol
     @ObservationIgnored private let weatherNM: any NetworkProtocol
     
+    var regressorType: RegressorType = .linear
     var mlModel: [CSVModel] = []
     var predictedCSVModels: [CSVModel] = []
     var mae: Double = 0
@@ -30,6 +50,16 @@ class ContentViewModel {
     init(openNM: any NetworkProtocol, weatherNM: any NetworkProtocol) {
         self.openNM = openNM
         self.weatherNM = weatherNM
+    }
+    
+    func clearPredictedData() {
+        predictedCSVModels = []
+    }
+    
+    func clearAllData() {
+        clearPredictedData()
+        mlModel = []
+        (mae, mse, rmse, r2) = (0, 0, 0, 0)
     }
     
     func fetchWeatherData() async {
@@ -50,7 +80,7 @@ class ContentViewModel {
         }
     }
     
-    func buildCSVModel(openModel: OpenMeteoModel, weatherModel: WeatherAPIModel) {
+    private func buildCSVModel(openModel: OpenMeteoModel, weatherModel: WeatherAPIModel) {
         for i in 0..<openModel.hourly.time.count {
             let currentTime = openModel.hourly.time[i]
             mlModel.append(CSVModel(latitude: Constants.latitude, longitude: Constants.longitude, time: currentTime, omTemp: openModel.hourly.temp[i], omFeelLike: openModel.hourly.feelLikeTemp[i], omPrecipProb: openModel.hourly.precipProb[i]))
@@ -74,7 +104,7 @@ class ContentViewModel {
         exportToCSV()
     }
     
-    func exportToCSV() {
+    private func exportToCSV() {
         var csvString = "Time,Latitude,Longitude,omTemp,omFeelLike,omPrecipProb,wTemp,wFeelLike,wPrecipProb,TEMPERATURE,FEELING,PRECIPITATION\n"
         
         for model in mlModel {
@@ -83,11 +113,11 @@ class ContentViewModel {
             
             let omTemp = model.omTemp
             let omFeelLike = model.omFeelLike
-            let omPrecipProb = model.omPrecipProb
+            let omPrecipProb = Double(model.omPrecipProb)
             
             let wTemp = model.wTemp
             let wFeelLike = model.wFeelLike
-            let wPrecipProb = model.wPrecipProb
+            let wPrecipProb = Double(model.wPrecipProb)
             
             let row = "\(timeString),\(model.latitude),\(model.longitude),\(omTemp),\(omFeelLike),\(omPrecipProb),\(wTemp),\(wFeelLike),\(wPrecipProb),\((omTemp+wTemp)/2),\((omFeelLike+wFeelLike)/2),\((omPrecipProb+wPrecipProb)/2)\n"
             csvString.append(row)
@@ -142,13 +172,35 @@ class ContentViewModel {
                 for (target, features, keyPath) in predictionTasks {
                     let allColumns = features + [target]
                     let filteredData = dataframe[allColumns]
-
-                    let regressor = try MLBoostedTreeRegressor(trainingData: filteredData, targetColumn: target)
-
-                    let modelURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(target).mlmodel")
-                    try regressor.write(to: modelURL)
-                    let compiledURL = try MLModel.compileModel(at: modelURL)
-                    let model = try MLModel(contentsOf: compiledURL)
+                
+                    let model: MLModel = try {
+                        switch regressorType {
+                        case .linear:
+                            let regressor = try MLLinearRegressor(trainingData: filteredData, targetColumn: target)
+                            let modelURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(target).mlmodel")
+                            try regressor.write(to: modelURL)
+                            let compiledURL = try MLModel.compileModel(at: modelURL)
+                            return try MLModel(contentsOf: compiledURL)
+                        case .randomForrest:
+                            let regressor = try MLRandomForestRegressor(trainingData: filteredData, targetColumn: target)
+                            let modelURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(target).mlmodel")
+                            try regressor.write(to: modelURL)
+                            let compiledURL = try MLModel.compileModel(at: modelURL)
+                            return try MLModel(contentsOf: compiledURL)
+                        case .boostedTree:
+                            let regressor = try MLBoostedTreeRegressor(trainingData: filteredData, targetColumn: target)
+                            let modelURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(target).mlmodel")
+                            try regressor.write(to: modelURL)
+                            let compiledURL = try MLModel.compileModel(at: modelURL)
+                            return try MLModel(contentsOf: compiledURL)
+                        case .decisionTree:
+                            let regressor = try MLDecisionTreeRegressor(trainingData: filteredData, targetColumn: target)
+                            let modelURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(target).mlmodel")
+                            try regressor.write(to: modelURL)
+                            let compiledURL = try MLModel.compileModel(at: modelURL)
+                            return try MLModel(contentsOf: compiledURL)
+                        }
+                    }()
 
                     print("\n🔮 Predicting \(target.uppercased()) for each hour of tomorrow:")
 
@@ -161,6 +213,9 @@ class ContentViewModel {
                         for feature in features {
                             if let value = row[feature] as? Double {
                                 inputDict[feature] = MLFeatureValue(double: value)
+                            }
+                            if let value = row[feature] as? Int {
+                                inputDict[feature] = MLFeatureValue(int64: Int64(value))
                             }
                         }
 
@@ -197,8 +252,23 @@ class ContentViewModel {
                             print("⏰ \(hourString): \(predictedValue) (Actual: \(actualValue))")
                         }
                     }
+                    
+                    // Precipitation is the only type out of the three that has the most 0 values all the time
+                    if target == "PRECIPITATION" {
+                        // Filter out zero actuals
+                        let filteredPairs = zip(actualValues, predictedValues).filter { $0.0 != 0 }
+                        let actualNonZero = filteredPairs.map { $0.0 }
+                        let predictedNonZero = filteredPairs.map { $0.1 }
 
-                    computeAccuracyMetrics(actualValues: actualValues, predictedValues: predictedValues, target: target)
+                        if !actualValues.isEmpty || actualValues.count == predictedValues.count {
+                            print("⚠️ No valid data to compute accuracy metrics for \(target).")
+                            return
+                        }
+                        print("📊 Skipping 0 values (only non-zero precipitation cases)...")
+                        computeAccuracyMetrics(actualValues: actualNonZero, predictedValues: predictedNonZero, target: target + " (non-zero only)")
+                    } else {
+                        computeAccuracyMetrics(actualValues: actualValues, predictedValues: predictedValues, target: target)
+                    }
                 }
             } catch {
                 print("❌ Error: \(error)")

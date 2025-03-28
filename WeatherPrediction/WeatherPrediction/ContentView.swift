@@ -20,76 +20,108 @@ struct ContentView: View {
     }
     
     var body: some View {
-        Form {
-            Section {
-                Text("Evaluation metrics").font(.title)
-                HStack(alignment: .center) {
-                    Text("MAE: \(vm.mae)")
-                    Text("MSE: \(vm.mse)")
-                    Text("RMSE: \(vm.rmse)")
-                    Text("R2: \(vm.r2)")
-                }
-            }
-            Section {
-                VStack {
-                    Picker(selection: $selectedSection, content: {
-                        Text("Predicted").tag(PickerSection.prediction)
-                        Text("OpenMeteo").tag(PickerSection.openMeteo)
-                        Text("WeatherAPI").tag(PickerSection.weatherAPI)
-                    }, label: {
-                        Text("Choose data source")
-                    })
-                    .pickerStyle(.segmented)
-                    
-                    if selectedSection == .openMeteo || selectedSection == .weatherAPI {
-                        List(vm.mlModel, id:\.id) { model in
-                            VStack(alignment: .leading) {
-                                HStack {
-                                    Text(model.time?.description ?? "N/A")
-                                        .bold()
-                                    Spacer()
-                                    
-                                    VStack {
-                                        Text("Temp: \(temp(from: model))")
-                                        Text("FeelsLike: \(feelLike(from: model))")
-                                        Text("Precip Prob: \(precipProb(from: model))")
-                                    }
-                                    
-                                }
-                            }
-                            .padding()
-                        }
-                        .scrollContentBackground(.hidden)
-                        .background(.regularMaterial)
-                    } else {
-                        List(vm.predictedCSVModels, id:\.id) { model in
-                            VStack(alignment: .leading) {
-                                HStack {
-                                    Text(model.time?.description ?? "N/A")
-                                        .bold()
-                                    Spacer()
-                                    
-                                    VStack {
-                                        Text("Temp: \(temp(from: model))")
-                                        Text("FeelsLike: \(feelLike(from: model))")
-                                        Text("Precip Prob: \(precipProb(from: model))")
-                                    }
-                                }
-                            }
-                            .padding()
-                        }
-                        .scrollContentBackground(.hidden)
-                        .background(.regularMaterial)
-                        
+        NavigationStack {
+            Form {
+                Section {
+                    Text("Evaluation metrics").font(.title)
+                    HStack(alignment: .center) {
+                        Text(String(format: "MAEL %.2f", vm.mae))
+                        Text(String(format: "MSE %.2f", vm.mse))
+                        Text(String(format: "RMSE %.2f", vm.rmse))
+                        Text(String(format: "R^2 %.2f", vm.r2))
                     }
                 }
-                .padding(.vertical)
+                Section {
+                    VStack {
+                        Picker(selection: $selectedSection, content: {
+                            Text("Predicted").tag(PickerSection.prediction)
+                            Text("OpenMeteo").tag(PickerSection.openMeteo)
+                            Text("WeatherAPI").tag(PickerSection.weatherAPI)
+                        }, label: {
+                            Text("Choose data source")
+                        })
+                        .pickerStyle(.segmented)
+                        
+                        if selectedSection == .openMeteo || selectedSection == .weatherAPI {
+                            List(vm.mlModel, id:\.id) { model in
+                                VStack(alignment: .leading) {
+                                    HStack {
+                                        Text(model.time?.description ?? "N/A")
+                                            .bold()
+                                        Spacer()
+                                        
+                                        VStack {
+                                            Text("Temp: \(temp(from: model))")
+                                            Text("FeelsLike: \(feelLike(from: model))")
+                                            Text("Precip Prob: \(precipProb(from: model))")
+                                        }
+                                        
+                                    }
+                                }
+                                .padding()
+                            }
+                            .scrollContentBackground(.hidden)
+                            .background(.regularMaterial)
+                        } else {
+                            List(vm.predictedCSVModels, id:\.id) { model in
+                                VStack(alignment: .leading) {
+                                    HStack {
+                                        Text(model.time?.description ?? "N/A")
+                                            .bold()
+                                        Spacer()
+                                        
+                                        VStack {
+                                            Text("Temp: \(temp(from: model))")
+                                            Text("FeelsLike: \(feelLike(from: model))")
+                                            Text("Precip Prob: \(precipProb(from: model))")
+                                        }
+                                    }
+                                }
+                                .padding()
+                            }
+                            .scrollContentBackground(.hidden)
+                            .background(.regularMaterial)
+                            
+                        }
+                    }
+                    .padding(.vertical)
+                }
             }
-        }
-        .task {
-            Task.detached(priority: .background, operation: {
-                await vm.fetchWeatherData()
-            })
+            .task {
+                Task.detached(priority: .background, operation: {
+                    await vm.fetchWeatherData()
+                })
+            }
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Picker(selection: $vm.regressorType) {
+                        ForEach(RegressorType.allCases, id:\.self) { Text($0.description) }
+                    } label: {
+                        Text("\(vm.regressorType.description)")
+                    }
+                    .pickerStyle(.menu)
+                }
+                
+                ToolbarItem(placement: .principal) {
+                    Button {
+                        Task {
+                            vm.clearAllData()
+                            await vm.fetchWeatherData()
+                        }
+                    } label: {
+                        Text("Re-fetch data and make prediction")
+                    }
+                }
+                
+                ToolbarItem(placement: .navigation) {
+                    Button {
+                        vm.clearPredictedData()
+                        vm.trainAndPredictWeatherMetrics()
+                    } label: {
+                        Text("Predict with selected regressor")
+                    }
+                }
+            }
         }
     }
     
