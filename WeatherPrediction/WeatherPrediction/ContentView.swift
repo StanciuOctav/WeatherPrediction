@@ -24,11 +24,14 @@ struct ContentView: View {
             Form {
                 Section {
                     Text("Evaluation metrics").font(.title)
-                    HStack(alignment: .center) {
-                        Text(String(format: "MAEL %.2f", vm.mae))
-                        Text(String(format: "MSE %.2f", vm.mse))
-                        Text(String(format: "RMSE %.2f", vm.rmse))
-                        Text(String(format: "R^2 %.2f", vm.r2))
+                    ForEach(vm.evaluationMetrics) { metric in
+                        HStack(alignment: .center) {
+                            Text("\(metric.target)").font(.subheadline)
+                            Text(String(format: "MAE %.2f", metric.mae))
+                            Text(String(format: "MSE %.2f", metric.mse))
+                            Text(String(format: "RMSE %.2f", metric.rmse))
+                            Text(String(format: "R^2 %.2f", metric.r2))
+                        }
                     }
                 }
                 Section {
@@ -135,7 +138,7 @@ struct ContentView: View {
         case .prediction:
             value = model.pTemp
         }
-        return String(format: "%.2f", value)
+        return String(format: "%.1f", value)
     }
 
     private func feelLike(from model: CSVModel) -> String {
@@ -148,7 +151,7 @@ struct ContentView: View {
         case .prediction:
             value = model.pFeelLike
         }
-        return String(format: "%.2f", value)
+        return String(format: "%.1f", value)
     }
 
     private func precipProb(from model: CSVModel) -> String {
@@ -161,7 +164,7 @@ struct ContentView: View {
         case .prediction:
             value = model.pPrecipProb
         }
-        return String(format: "%.2f", value) + "%"
+        return String(format: "%.0f", value) + "%"
     }
 }
 

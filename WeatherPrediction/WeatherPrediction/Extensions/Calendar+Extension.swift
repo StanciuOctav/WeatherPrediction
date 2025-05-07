@@ -8,19 +8,19 @@
 import Foundation
 
 extension Calendar {
-    /// Returns [String] containing the last 14 days including the one today.
-    public static var last14Days: [String] {
+    /// Returns [String] containing the last 7 days including the one today.
+    public static var last7Days: [String] {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         
-        let last14Days: [Date] = (0..<15).map { offset in
+        let last7Days: [Date] = (0..<8).map { offset in
             calendar.date(byAdding: .day, value: -offset, to: today)!
         }
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.locale = Locale(identifier: "en_US_POSIX")
         
-        let formattedDates = last14Days.map { formatter.string(from: $0) }
+        let formattedDates = last7Days.map { formatter.string(from: $0) }
         
         return formattedDates
     }

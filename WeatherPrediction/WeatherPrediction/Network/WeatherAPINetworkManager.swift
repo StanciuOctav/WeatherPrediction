@@ -48,7 +48,10 @@ class WeatherAPINetworkManager: NetworkProtocol {
         
         var weatherData = WeatherAPIModel()
         
-        for date in dates {
+        var last7Days = dates
+        last7Days.removeLast()
+        
+        for date in last7Days {
             guard let url = buildURL(latitude: latitude, longitude: longitude, date: date, forecastType: .history) else { return nil }
             
             do {
@@ -59,7 +62,7 @@ class WeatherAPINetworkManager: NetworkProtocol {
                 weatherData.location = value.location
                 weatherData.forecast.forecastday.append(contentsOf: value.forecast.forecastday)
             } catch {
-                print("Failed to fetch weather data: \(error)")
+                print("Failed to fetch weather data - WeatherAPI - 1: \(error)")
                 return nil
             }
         }
@@ -74,7 +77,7 @@ class WeatherAPINetworkManager: NetworkProtocol {
             weatherData.location = value.location
             weatherData.forecast.forecastday.append(contentsOf: value.forecast.forecastday)
         } catch {
-            print("Failed to fetch weather data: \(error)")
+            print("Failed to fetch weather data - WeatherAPI - 2: \(error)")
             return nil
         }
             

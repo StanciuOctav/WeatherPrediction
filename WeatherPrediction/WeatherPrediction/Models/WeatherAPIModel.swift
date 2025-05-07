@@ -50,4 +50,9 @@ struct Location: Decodable, DataDecoder, AlamofireDecodable {
 struct WeatherAPIModel: Decodable, DataDecoder, AlamofireDecodable {
     var location: Location = Location()
     var forecast: Forecast = Forecast()
+    
+    enum CodingKeys: String, CodingKey {
+        case location
+        case forecast
+    }
 }

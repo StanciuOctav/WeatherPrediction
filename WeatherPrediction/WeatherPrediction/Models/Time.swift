@@ -16,7 +16,7 @@ struct Time: Decodable, DataDecoder, AlamofireDecodable, CustomStringConvertible
     let hour: Int
     
     var description: String {
-        "\(year)-\(month)-\(day)-\(hour)\n"
+        "\(year)-\(month)-\(day) \(hour):00"
     }
     
     init?(from dateString: String, withDateFormat dateFormat: String) {

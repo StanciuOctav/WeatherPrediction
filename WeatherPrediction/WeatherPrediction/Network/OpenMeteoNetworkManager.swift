@@ -39,7 +39,7 @@ class OpenMeteoNetworkManager: NetworkProtocol {
                 .value
             }
         catch {
-            print("Failed to fetch weather data: \(error)")
+            print("Failed to fetch weather data in OpenMeteo: \(error)")
             return nil
         }
     }

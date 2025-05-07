@@ -42,10 +42,8 @@ class ContentViewModel {
     var regressorType: RegressorType = .linear
     var mlModel: [CSVModel] = []
     var predictedCSVModels: [CSVModel] = []
-    var mae: Double = 0
-    var mse: Double = 0
-    var rmse: Double = 0
-    var r2: Double = 0
+    var evaluationMetrics: [EvaluationMetric] = []
+    var predictedCSVString: String = "Target,MAE,MSE,RMSE,R2\n"
     
     init(openNM: any NetworkProtocol, weatherNM: any NetworkProtocol) {
         self.openNM = openNM
@@ -54,17 +52,18 @@ class ContentViewModel {
     
     func clearPredictedData() {
         predictedCSVModels = []
+        evaluationMetrics = []
+        predictedCSVString = "Target,MAE,MSE,RMSE,R2\n"
     }
     
     func clearAllData() {
         clearPredictedData()
         mlModel = []
-        (mae, mse, rmse, r2) = (0, 0, 0, 0)
     }
     
     func fetchWeatherData() async {
         async let openModelCall = openNM.fetchWeatherData(latitude: Constants.latitude, longitude: Constants.longitude, forDates: [])
-        async let weatherModelCall = weatherNM.fetchWeatherData(latitude: Constants.latitude, longitude: Constants.longitude, forDates: Calendar.last14Days + [Calendar.tomorrow])
+        async let weatherModelCall = weatherNM.fetchWeatherData(latitude: Constants.latitude, longitude: Constants.longitude, forDates: Calendar.last7Days + [Calendar.tomorrow])
         
         let (openModel, weatherModel) = await (openModelCall, weatherModelCall)
         
@@ -139,17 +138,17 @@ class ContentViewModel {
 #if canImport(CreateML)
     func trainAndPredictWeatherMetrics() {
         let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("ModelData.csv")
-
+        
         Task { [weak self] in
             guard let self else { return }
             do {
                 let dataframe = try DataFrame(contentsOfCSVFile: fileURL)
-
+                
                 let dateFormatter = DateFormatter()
                 dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
-
+                
                 var hourlyRowsForTomorrow: [(date: Date, row: DataFrame.Row)] = []
-
+                
                 for row in dataframe.rows {
                     if let timeString = row["Time"] as? String,
                        let date = dateFormatter.date(from: timeString),
@@ -157,22 +156,22 @@ class ContentViewModel {
                         hourlyRowsForTomorrow.append((date, row))
                     }
                 }
-
+                
                 if hourlyRowsForTomorrow.isEmpty {
                     print("⚠️ No data found for tomorrow.")
                     return
                 }
-
+                
                 let predictionTasks: [(target: String, features: [String], keyPath: WritableKeyPath<CSVModel, Double>)] = [
                     ("TEMPERATURE", ["omTemp", "wTemp"], \.pTemp),
                     ("FEELING", ["omFeelLike", "wFeelLike"], \.pFeelLike),
                     ("PRECIPITATION", ["omPrecipProb", "wPrecipProb"], \.pPrecipProb)
                 ]
-
+                
                 for (target, features, keyPath) in predictionTasks {
                     let allColumns = features + [target]
                     let filteredData = dataframe[allColumns]
-                
+                    
                     let model: MLModel = try {
                         switch regressorType {
                         case .linear:
@@ -201,15 +200,15 @@ class ContentViewModel {
                             return try MLModel(contentsOf: compiledURL)
                         }
                     }()
-
+                    
                     print("\n🔮 Predicting \(target.uppercased()) for each hour of tomorrow:")
-
+                    
                     var actualValues: [Double] = []
                     var predictedValues: [Double] = []
-
+                    
                     for (date, row) in hourlyRowsForTomorrow {
                         var inputDict: [String: MLFeatureValue] = [:]
-
+                        
                         for feature in features {
                             if let value = row[feature] as? Double {
                                 inputDict[feature] = MLFeatureValue(double: value)
@@ -218,19 +217,19 @@ class ContentViewModel {
                                 inputDict[feature] = MLFeatureValue(int64: Int64(value))
                             }
                         }
-
+                        
                         let inputProvider = try MLDictionaryFeatureProvider(dictionary: inputDict)
                         let prediction = try model.prediction(from: inputProvider)
-
+                        
                         if let predictedValue = prediction.featureValue(for: target)?.doubleValue,
                            let actualValue = row[target] as? Double {
                             
                             actualValues.append(actualValue)
                             predictedValues.append(predictedValue)
-
+                            
                             let components = Calendar.current.dateComponents([.year, .month, .day, .hour], from: date)
                             let hour = components.hour ?? 0
-
+                            
                             if let index = predictedCSVModels.firstIndex(where: { $0.time?.hour == hour }) {
                                 predictedCSVModels[index][keyPath: keyPath] = predictedValue
                             } else {
@@ -247,20 +246,20 @@ class ContentViewModel {
                                 ))
                                 predictedCSVModels[predictedCSVModels.count - 1][keyPath: keyPath] = predictedValue
                             }
-
+                            
                             let hourString = DateFormatter.localizedString(from: date, dateStyle: .none, timeStyle: .short)
-                            print("⏰ \(hourString): \(predictedValue) (Actual: \(actualValue))")
+                            print("⏰ \(hourString): \(Int(predictedValue)) (Actual: \(actualValue))")
                         }
                     }
                     
                     // Precipitation is the only type out of the three that has the most 0 values all the time
                     if target == "PRECIPITATION" {
                         // Filter out zero actuals
-                        let filteredPairs = zip(actualValues, predictedValues).filter { $0.0 != 0 }
+                        let filteredPairs = zip(actualValues, predictedValues).filter { Int($0.0) != 0 }
                         let actualNonZero = filteredPairs.map { $0.0 }
                         let predictedNonZero = filteredPairs.map { $0.1 }
-
-                        if !actualValues.isEmpty || actualValues.count == predictedValues.count {
+                        
+                        if actualNonZero.isEmpty {
                             print("⚠️ No valid data to compute accuracy metrics for \(target).")
                             return
                         }
@@ -270,6 +269,7 @@ class ContentViewModel {
                         computeAccuracyMetrics(actualValues: actualValues, predictedValues: predictedValues, target: target)
                     }
                 }
+                exportPredictedCSV()
             } catch {
                 print("❌ Error: \(error)")
             }
@@ -277,21 +277,16 @@ class ContentViewModel {
     }
     
     func computeAccuracyMetrics(actualValues: [Double], predictedValues: [Double], target: String) {
-        guard !actualValues.isEmpty, actualValues.count == predictedValues.count else {
-            print("⚠️ No valid data to compute accuracy metrics for \(target).")
-            return
-        }
-
         let n = Double(actualValues.count)
         
-        mae = zip(actualValues, predictedValues).map { abs($0 - $1) }.reduce(0, +) / n
-        mse = zip(actualValues, predictedValues).map { pow($0 - $1, 2) }.reduce(0, +) / n
-        rmse = sqrt(mse)
-
+        let mae = zip(actualValues, predictedValues).map { abs($0 - $1) }.reduce(0, +) / n
+        let mse = zip(actualValues, predictedValues).map { pow($0 - $1, 2) }.reduce(0, +) / n
+        let rmse = sqrt(mse)
+        
         let meanActual = actualValues.reduce(0, +) / n
         let ssTotal = actualValues.map { pow($0 - meanActual, 2) }.reduce(0, +)
         let ssResidual = zip(actualValues, predictedValues).map { pow($0 - $1, 2) }.reduce(0, +)
-        r2 = 1 - (ssResidual / ssTotal)
+        let r2 = 1 - (ssResidual / ssTotal)
 
         print("""
         📊 Model Accuracy for \(target):
@@ -300,8 +295,28 @@ class ContentViewModel {
         🔹 RMSE: \(String(format: "%.2f", rmse))
         🔹 R² Score: \(String(format: "%.2f", r2))
         """)
+        
+        let evMetric = EvaluationMetric(target: target, mae: mae, mse: mse, rmse: rmse, r2: r2)
+        evaluationMetrics.append(evMetric)
+        predictedCSVString.append("\(evMetric.description)\n")
     }
-
-
+    
+    private func exportPredictedCSV() {
+        predictedCSVString.append("Time,Temperature,Feels Like,Precipitation\n")
+        
+        for pred in predictedCSVModels {
+            let row = "\(pred.time?.description ?? "N/A"),\(String(format: "%.1f", pred.pTemp)),\(String(format: "%.1f", pred.pFeelLike)),\(Int(pred.pPrecipProb))%\n"
+            predictedCSVString.append(row)
+        }
+        
+        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("Predictions.csv")
+        
+        do {
+            try predictedCSVString.write(to: fileURL, atomically: true, encoding: .utf8)
+            print("CSV file saved at: \(fileURL.path)")
+        } catch {
+            print("Failed to save CSV: \(error)")
+        }
+    }
 #endif
 }
