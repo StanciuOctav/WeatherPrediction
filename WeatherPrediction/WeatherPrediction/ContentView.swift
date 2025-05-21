@@ -12,12 +12,8 @@ fileprivate enum PickerSection {
 }
 
 struct ContentView: View {
-    @State private var vm: ContentViewModel
+    @State private var vm = ContentViewModel(openNM: OpenMeteoNetworkManager(), weatherNM: WeatherAPINetworkManager())
     @State private var selectedSection: PickerSection = .prediction
-    
-    init() {
-        self.vm = ContentViewModel(openNM: OpenMeteoNetworkManager(), weatherNM: WeatherAPINetworkManager())
-    }
     
     var body: some View {
         NavigationStack {
@@ -105,6 +101,16 @@ struct ContentView: View {
                     .pickerStyle(.menu)
                 }
                 
+                ToolbarItem(placement: .primaryAction) {
+                    Picker(selection: $vm.selectedDay) {
+                        ForEach(DayPrediction.allCases, id:\.self) { Text($0.description) }
+                    } label: {
+                        Text("\(vm.selectedDay.description)")
+                    }
+                    .pickerStyle(.menu)
+                }
+                
+                
                 ToolbarItem(placement: .principal) {
                     Button {
                         Task {
@@ -114,6 +120,7 @@ struct ContentView: View {
                     } label: {
                         Text("Re-fetch data and make prediction")
                     }
+                    .buttonStyle(.borderedProminent)
                 }
                 
                 ToolbarItem(placement: .navigation) {
@@ -123,6 +130,7 @@ struct ContentView: View {
                     } label: {
                         Text("Predict with selected regressor")
                     }
+                    .buttonStyle(.borderedProminent)
                 }
             }
         }

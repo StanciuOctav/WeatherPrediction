@@ -33,6 +33,21 @@ enum RegressorType: Identifiable, CaseIterable {
     }
 }
 
+enum DayPrediction: Identifiable, CaseIterable {
+    var id: String { UUID().uuidString }
+    
+    case today, tomorrow
+    
+    var description: String {
+        switch self {
+        case .today:
+            return "Today"
+        case .tomorrow:
+            return "Tomorrow"
+        }
+    }
+}
+
 @Observable
 class ContentViewModel {
     
@@ -40,6 +55,7 @@ class ContentViewModel {
     @ObservationIgnored private let weatherNM: any NetworkProtocol
     
     var regressorType: RegressorType = .linear
+    var selectedDay: DayPrediction = .today
     var mlModel: [CSVModel] = []
     var predictedCSVModels: [CSVModel] = []
     var evaluationMetrics: [EvaluationMetric] = []
@@ -62,8 +78,12 @@ class ContentViewModel {
     }
     
     func fetchWeatherData() async {
-        async let openModelCall = openNM.fetchWeatherData(latitude: Constants.latitude, longitude: Constants.longitude, forDates: [])
-        async let weatherModelCall = weatherNM.fetchWeatherData(latitude: Constants.latitude, longitude: Constants.longitude, forDates: Calendar.last7Days + [Calendar.tomorrow])
+        async let openModelCall = openNM.fetchWeatherData(latitude: Constants.latitude,
+                                                          longitude: Constants.longitude,
+                                                          selectedDay: selectedDay)
+        async let weatherModelCall = weatherNM.fetchWeatherData(latitude: Constants.latitude,
+                                                                longitude: Constants.longitude,
+                                                                selectedDay: selectedDay)
         
         let (openModel, weatherModel) = await (openModelCall, weatherModelCall)
         
@@ -152,7 +172,7 @@ class ContentViewModel {
                 for row in dataframe.rows {
                     if let timeString = row["Time"] as? String,
                        let date = dateFormatter.date(from: timeString),
-                       Calendar.current.isDate(date, inSameDayAs: Calendar.tomorrowDate) {
+                       Calendar.current.isDate(date, inSameDayAs: selectedDay == .today ? Calendar.todayDate : Calendar.tomorrowDate) {
                         hourlyRowsForTomorrow.append((date, row))
                     }
                 }

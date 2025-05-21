@@ -43,12 +43,11 @@ class WeatherAPINetworkManager: NetworkProtocol {
         return components.url?.absoluteString
     }
     
-    func fetchWeatherData(latitude: Double, longitude: Double, forDates dates: [String]) async -> T {
-        guard !dates.isEmpty else { return nil }
+    func fetchWeatherData(latitude: Double, longitude: Double, selectedDay: DayPrediction) async -> T {
         
         var weatherData = WeatherAPIModel()
         
-        var last7Days = dates
+        var last7Days = selectedDay == .today ? Calendar.last7Days : Calendar.last7DaysAndToday + [Calendar.tomorrow]
         last7Days.removeLast()
         
         for date in last7Days {

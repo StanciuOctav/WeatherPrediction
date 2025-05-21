@@ -13,7 +13,7 @@ import Foundation
 class OpenMeteoNetworkManager: NetworkProtocol {
     typealias T = OpenMeteoModel?
     
-    func buildURL(latitude: Double, longitude: Double, forDates dates: [String] = []) -> String? {
+    func buildURL(latitude: Double, longitude: Double, selectedDay: DayPrediction) -> String? {
         var components = URLComponents()
         components.scheme = Constants.urlScheme
         components.host = Constants.OpenMeteo.host
@@ -23,15 +23,15 @@ class OpenMeteoNetworkManager: NetworkProtocol {
             URLQueryItem(name: "latitude", value: "\(latitude)"),
             URLQueryItem(name: "longitude", value: "\(longitude)"),
             URLQueryItem(name: "hourly", value: Constants.OpenMeteo.hourly),
-            URLQueryItem(name: "past_days", value: "14"),
-            URLQueryItem(name: "forecast_days", value: "2") // today and tomorrow
+            URLQueryItem(name: "past_days", value: "7"),
+            URLQueryItem(name: "forecast_days", value: selectedDay == .today ? "1" : "2") // today and tomorrow
         ]
         
         return components.url?.absoluteString
     }
     
-    func fetchWeatherData(latitude: Double, longitude: Double, forDates dates: [String] = []) async -> T {
-        guard let url = buildURL(latitude: latitude, longitude: longitude) else { return nil }
+    func fetchWeatherData(latitude: Double, longitude: Double, selectedDay: DayPrediction) async -> T {
+    guard let url = buildURL(latitude: latitude, longitude: longitude, selectedDay: selectedDay) else { return nil }
         do {
             return try await AF.request(url)
                 .validate()
