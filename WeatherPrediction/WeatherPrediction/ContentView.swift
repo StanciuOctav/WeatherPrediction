@@ -5,15 +5,29 @@
 //  Created by Octav Stanciu on 03.02.2025.
 //
 
+import Charts
 import SwiftUI
 
 fileprivate enum PickerSection {
     case openMeteo, weatherAPI, prediction
 }
 
+fileprivate enum ChartData: String {
+    case temp = "Temperature"
+    case feelLike = "Feels Like"
+    case precip = "Precipitation"
+}
+
+fileprivate enum DataType: String {
+    case list = "List"
+    case chart = "Chart"
+}
+
 struct ContentView: View {
     @State private var vm = ContentViewModel(openNM: OpenMeteoNetworkManager(), weatherNM: WeatherAPINetworkManager())
     @State private var selectedSection: PickerSection = .prediction
+    @State private var selectedDataType: DataType = .list
+    @State private var chartDataTypeSelected: ChartData = .temp
     
     var body: some View {
         NavigationStack {
@@ -32,55 +46,39 @@ struct ContentView: View {
                 }
                 Section {
                     VStack {
-                        Picker(selection: $selectedSection, content: {
-                            Text("Predicted").tag(PickerSection.prediction)
-                            Text("OpenMeteo").tag(PickerSection.openMeteo)
-                            Text("WeatherAPI").tag(PickerSection.weatherAPI)
+                        Picker(selection: $selectedDataType, content: {
+                            Text("List").tag(DataType.list)
+                            Text("Chart").tag(DataType.chart)
                         }, label: {
-                            Text("Choose data source")
+                            Text("Choose data display type")
                         })
                         .pickerStyle(.segmented)
                         
-                        if selectedSection == .openMeteo || selectedSection == .weatherAPI {
-                            List(vm.mlModel, id:\.id) { model in
-                                VStack(alignment: .leading) {
-                                    HStack {
-                                        Text(model.time?.description ?? "N/A")
-                                            .bold()
-                                        Spacer()
-                                        
-                                        VStack {
-                                            Text("Temp: \(temp(from: model))")
-                                            Text("FeelsLike: \(feelLike(from: model))")
-                                            Text("Precip Prob: \(precipProb(from: model))")
-                                        }
-                                        
-                                    }
-                                }
-                                .padding()
-                            }
-                            .scrollContentBackground(.hidden)
-                            .background(.regularMaterial)
+                        if selectedDataType == .list {
+                            Picker(selection: $selectedSection, content: {
+                                Text("Predicted").tag(PickerSection.prediction)
+                                Text("OpenMeteo").tag(PickerSection.openMeteo)
+                                Text("WeatherAPI").tag(PickerSection.weatherAPI)
+                            }, label: {
+                                Text("Choose data source")
+                            })
+                            .pickerStyle(.segmented)
                         } else {
-                            List(vm.predictedCSVModels, id:\.id) { model in
-                                VStack(alignment: .leading) {
-                                    HStack {
-                                        Text(model.time?.description ?? "N/A")
-                                            .bold()
-                                        Spacer()
-                                        
-                                        VStack {
-                                            Text("Temp: \(temp(from: model))")
-                                            Text("FeelsLike: \(feelLike(from: model))")
-                                            Text("Precip Prob: \(precipProb(from: model))")
-                                        }
-                                    }
-                                }
-                                .padding()
-                            }
-                            .scrollContentBackground(.hidden)
-                            .background(.regularMaterial)
-                            
+                            Picker(selection: $chartDataTypeSelected, content: {
+                                Text("Temperature").tag(ChartData.temp)
+                                Text("Feels like temperature").tag(ChartData.feelLike)
+                                Text("Precipitation probability").tag(ChartData.precip)
+                            }, label: {
+                                Text("Choose data display type")
+                            })
+                            .pickerStyle(.segmented)
+                        }
+                        
+                        switch selectedDataType {
+                        case .list:
+                            listView()
+                        case .chart:
+                            chartView()
                         }
                     }
                     .padding(.vertical)
@@ -136,6 +134,81 @@ struct ContentView: View {
         }
     }
     
+    private func chartView() -> some View {
+        VStack {
+            Text(chartDataTypeSelected.rawValue)
+                .font(.headline)
+            
+            Chart {
+                ForEach(vm.predictedCSVModels, id:\.id) { model in
+                    if let hour = model.time?.hour {
+                        LineMark(
+                            x: .value("Hour", hour),
+                            y: .value("Value", yValueFor(model))
+                        )
+                    }
+                }
+            }
+            .chartXScale(domain: 0...23)
+            .frame(height: 300)
+        }
+        .padding()
+    }
+    
+    private func listView() -> some View {
+        if selectedSection == .openMeteo || selectedSection == .weatherAPI {
+            List(vm.mlModel, id:\.id) { model in
+                VStack(alignment: .leading) {
+                    HStack {
+                        Text(model.time?.description ?? "N/A")
+                            .bold()
+                        Spacer()
+                        
+                        VStack {
+                            Text("Temp: \(temp(from: model))")
+                            Text("FeelsLike: \(feelLike(from: model))")
+                            Text("Precip Prob: \(precipProb(from: model))")
+                        }
+                        
+                    }
+                }
+                .padding()
+            }
+            .scrollContentBackground(.hidden)
+            .background(.regularMaterial)
+        } else {
+            List(vm.predictedCSVModels, id:\.id) { model in
+                VStack(alignment: .leading) {
+                    HStack {
+                        Text(model.time?.description ?? "N/A")
+                            .bold()
+                        Spacer()
+                        
+                        VStack {
+                            Text("Temp: \(temp(from: model))")
+                            Text("FeelsLike: \(feelLike(from: model))")
+                            Text("Precip Prob: \(precipProb(from: model))")
+                        }
+                    }
+                }
+                .padding()
+            }
+            .scrollContentBackground(.hidden)
+            .background(.regularMaterial)
+        }
+    }
+    
+    private func yValueFor(_ model: CSVModel) -> Double {
+        switch chartDataTypeSelected {
+        case .temp:
+            return model.pTemp
+        case .feelLike:
+            return model.pFeelLike
+        case .precip:
+            return model.pPrecipProb
+        }
+    }
+    
     private func temp(from model: CSVModel) -> String {
         let value: Double
         switch selectedSection {
@@ -148,7 +221,7 @@ struct ContentView: View {
         }
         return String(format: "%.1f", value)
     }
-
+    
     private func feelLike(from model: CSVModel) -> String {
         let value: Double
         switch selectedSection {
@@ -161,7 +234,7 @@ struct ContentView: View {
         }
         return String(format: "%.1f", value)
     }
-
+    
     private func precipProb(from model: CSVModel) -> String {
         let value: Double
         switch selectedSection {
