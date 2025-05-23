@@ -48,7 +48,6 @@ class WeatherAPINetworkManager: NetworkProtocol {
         var weatherData = WeatherAPIModel()
         
         var last7Days = selectedDay == .today ? Calendar.last7Days : Calendar.last7DaysAndToday + [Calendar.tomorrow]
-        last7Days.removeLast()
         
         for date in last7Days {
             guard let url = buildURL(latitude: latitude, longitude: longitude, date: date, forecastType: .history) else { return nil }
