@@ -17,14 +17,14 @@ import TabularData
 enum RegressorType: Identifiable, CaseIterable {
     var id: String { UUID().uuidString }
     
-    case linear, randomForrest, boostedTree, decisionTree
+    case linear, randomForest, boostedTree, decisionTree
     
     var description: String {
         switch self {
         case .linear:
             return "Linear Regression"
-        case .randomForrest:
-            return "Random Forrest Regression"
+        case .randomForest:
+            return "Random Forest Regression"
         case .boostedTree:
             return "Boosting Tree Regression"
         case .decisionTree:
@@ -200,7 +200,7 @@ class ContentViewModel {
                             try regressor.write(to: modelURL)
                             let compiledURL = try MLModel.compileModel(at: modelURL)
                             return try MLModel(contentsOf: compiledURL)
-                        case .randomForrest:
+                        case .randomForest:
                             let regressor = try MLRandomForestRegressor(trainingData: filteredData, targetColumn: target)
                             let modelURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(target).mlmodel")
                             try regressor.write(to: modelURL)
