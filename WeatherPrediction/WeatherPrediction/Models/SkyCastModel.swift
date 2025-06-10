@@ -1,5 +1,5 @@
 //
-//  CSVModel.swift
+//  SkyCastModel.swift
 //  WeatherPrediction
 //
 //  Created by Octav Stanciu on 16.03.2025.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct CSVModel: Identifiable, Hashable {
+struct SkyCastModel: Identifiable, Hashable {
     
     var id: String {
         UUID().uuidString

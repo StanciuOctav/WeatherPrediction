@@ -56,8 +56,8 @@ class ContentViewModel {
     
     var regressorType: RegressorType = .linear
     var selectedDay: DayPrediction = .today
-    var mlModel: [CSVModel] = []
-    var predictedCSVModels: [CSVModel] = []
+    var mlModel: [SkyCastModel] = []
+    var predictedSkyCastModels: [SkyCastModel] = []
     var evaluationMetrics: [EvaluationMetric] = []
     var predictedCSVString: String = "Target,MAE,MSE,RMSE,R2\n"
     
@@ -67,7 +67,7 @@ class ContentViewModel {
     }
     
     func clearPredictedData() {
-        predictedCSVModels = []
+        predictedSkyCastModels = []
         evaluationMetrics = []
         predictedCSVString = "Target,MAE,MSE,RMSE,R2\n"
     }
@@ -102,7 +102,7 @@ class ContentViewModel {
     private func buildCSVModel(openModel: OpenMeteoModel, weatherModel: WeatherAPIModel) {
         for i in 0..<openModel.hourly.time.count {
             let currentTime = openModel.hourly.time[i]
-            mlModel.append(CSVModel(latitude: Constants.latitude, longitude: Constants.longitude, time: currentTime, omTemp: openModel.hourly.temp[i], omFeelLike: openModel.hourly.feelLikeTemp[i], omPrecipProb: openModel.hourly.precipProb[i]))
+            mlModel.append(SkyCastModel(latitude: Constants.latitude, longitude: Constants.longitude, time: currentTime, omTemp: openModel.hourly.temp[i], omFeelLike: openModel.hourly.feelLikeTemp[i], omPrecipProb: openModel.hourly.precipProb[i]))
         }
         
         for forecastDay in weatherModel.forecast.forecastday {
@@ -182,7 +182,7 @@ class ContentViewModel {
                     return
                 }
                 
-                let predictionTasks: [(target: String, features: [String], keyPath: WritableKeyPath<CSVModel, Double>)] = [
+                let predictionTasks: [(target: String, features: [String], keyPath: WritableKeyPath<SkyCastModel, Double>)] = [
                     ("TEMPERATURE", ["omTemp", "wTemp"], \.pTemp),
                     ("FEELING", ["omFeelLike", "wFeelLike"], \.pFeelLike),
                     ("PRECIPITATION", ["omPrecipProb", "wPrecipProb"], \.pPrecipProb)
@@ -250,10 +250,10 @@ class ContentViewModel {
                             let components = Calendar.current.dateComponents([.year, .month, .day, .hour], from: date)
                             let hour = components.hour ?? 0
                             
-                            if let index = predictedCSVModels.firstIndex(where: { $0.time?.hour == hour }) {
-                                predictedCSVModels[index][keyPath: keyPath] = predictedValue
+                            if let index = predictedSkyCastModels.firstIndex(where: { $0.time?.hour == hour }) {
+                                predictedSkyCastModels[index][keyPath: keyPath] = predictedValue
                             } else {
-                                predictedCSVModels.append(CSVModel(
+                                predictedSkyCastModels.append(SkyCastModel(
                                     latitude: 0.0,
                                     longitude: 0.0,
                                     time: Time(year: components.year ?? 0,
@@ -264,7 +264,7 @@ class ContentViewModel {
                                     pFeelLike: 0,
                                     pPrecipProb: 0
                                 ))
-                                predictedCSVModels[predictedCSVModels.count - 1][keyPath: keyPath] = predictedValue
+                                predictedSkyCastModels[predictedSkyCastModels.count - 1][keyPath: keyPath] = predictedValue
                             }
                             
                             let hourString = DateFormatter.localizedString(from: date, dateStyle: .none, timeStyle: .short)
@@ -324,7 +324,7 @@ class ContentViewModel {
     private func exportPredictedCSV() {
         predictedCSVString.append("Time,Temperature,Feels Like,Precipitation\n")
         
-        for pred in predictedCSVModels {
+        for pred in predictedSkyCastModels {
             let row = "\(pred.time?.description ?? "N/A"),\(String(format: "%.1f", pred.pTemp)),\(String(format: "%.1f", pred.pFeelLike)),\(Int(pred.pPrecipProb))%\n"
             predictedCSVString.append(row)
         }

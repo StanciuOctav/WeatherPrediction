@@ -140,7 +140,7 @@ struct ContentView: View {
                 .font(.headline)
             
             Chart {
-                ForEach(vm.predictedCSVModels, id:\.id) { model in
+                ForEach(vm.predictedSkyCastModels, id:\.id) { model in
                     if let hour = model.time?.hour {
                         LineMark(
                             x: .value("Hour", hour),
@@ -177,7 +177,7 @@ struct ContentView: View {
             .scrollContentBackground(.hidden)
             .background(.regularMaterial)
         } else {
-            List(vm.predictedCSVModels, id:\.id) { model in
+            List(vm.predictedSkyCastModels, id:\.id) { model in
                 VStack(alignment: .leading) {
                     HStack {
                         Text(model.time?.description ?? "N/A")
@@ -198,7 +198,7 @@ struct ContentView: View {
         }
     }
     
-    private func yValueFor(_ model: CSVModel) -> Double {
+    private func yValueFor(_ model: SkyCastModel) -> Double {
         switch chartDataTypeSelected {
         case .temp:
             return model.pTemp
@@ -209,7 +209,7 @@ struct ContentView: View {
         }
     }
     
-    private func temp(from model: CSVModel) -> String {
+    private func temp(from model: SkyCastModel) -> String {
         let value: Double
         switch selectedSection {
         case .openMeteo:
@@ -222,7 +222,7 @@ struct ContentView: View {
         return String(format: "%.1f", value)
     }
     
-    private func feelLike(from model: CSVModel) -> String {
+    private func feelLike(from model: SkyCastModel) -> String {
         let value: Double
         switch selectedSection {
         case .openMeteo:
@@ -235,7 +235,7 @@ struct ContentView: View {
         return String(format: "%.1f", value)
     }
     
-    private func precipProb(from model: CSVModel) -> String {
+    private func precipProb(from model: SkyCastModel) -> String {
         let value: Double
         switch selectedSection {
         case .openMeteo:
