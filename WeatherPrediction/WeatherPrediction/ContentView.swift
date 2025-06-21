@@ -89,49 +89,67 @@ struct ContentView: View {
                     await vm.fetchWeatherData()
                 })
             }
+            .onChange(of: vm.regressorType, { _, _ in
+                vm.regressorParameters = RegressorParameters()
+            })
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Picker(selection: $vm.regressorType) {
-                        ForEach(RegressorType.allCases, id:\.self) { Text($0.description) }
-                    } label: {
-                        Text("\(vm.regressorType.description)")
+                    NavigationLink(destination: ParametersSettingsView(params: $vm.regressorParameters,
+                                                                       typeOfRegressor: $vm.regressorType)) {
+                        Label("Set model parameters", systemImage: "gear")
                     }
-                    .pickerStyle(.menu)
                 }
                 
-                ToolbarItem(placement: .primaryAction) {
-                    Picker(selection: $vm.selectedDay) {
-                        ForEach(DayPrediction.allCases, id:\.self) { Text($0.description) }
-                    } label: {
-                        Text("\(vm.selectedDay.description)")
-                    }
-                    .pickerStyle(.menu)
-                }
-                
-                
-                ToolbarItem(placement: .principal) {
-                    Button {
-                        Task {
-                            vm.clearAllData()
-                            await vm.fetchWeatherData()
+                ToolbarItem(placement: .topBarLeading) {
+                    Menu("Actions") {
+                        Button {
+                            Task {
+                                vm.clearAllData()
+                                await vm.fetchWeatherData()
+                            }
+                        } label: {
+                            Text("Re-fetch data and make prediction")
                         }
-                    } label: {
-                        Text("Re-fetch data and make prediction")
+                        .buttonStyle(.borderedProminent)
+                        
+                        Button {
+                            vm.clearPredictedData()
+#if canImport(CreateML)
+                            vm.trainAndPredict()
+#endif
+                        } label: {
+                            Text("Predict with selected regressor")
+                        }
+                        .buttonStyle(.borderedProminent)
                     }
-                    .buttonStyle(.borderedProminent)
                 }
                 
-                ToolbarItem(placement: .navigation) {
-                    Button {
-                        vm.clearPredictedData()
-                        vm.trainAndPredictWeatherMetrics()
-                    } label: {
-                        Text("Predict with selected regressor")
+                ToolbarItem(placement: .topBarLeading) {
+                    Menu("Configuration menu") {
+                        regressorTypePicker()
+                        selectDayPicker()
                     }
-                    .buttonStyle(.borderedProminent)
                 }
             }
         }
+    }
+    
+    private func regressorTypePicker() -> some View {
+        Picker(selection: $vm.regressorType) {
+            ForEach(RegressorType.allCases, id:\.self) { Text($0.description) }
+        } label: {
+            Text("Regressor: \(vm.regressorType.description)")
+        }
+        .pickerStyle(.menu)
+    }
+    
+    private func selectDayPicker() -> some View {
+        Picker(selection: $vm.selectedDay) {
+            ForEach(DayPrediction.allCases, id:\.self) { Text($0.description) }
+        } label: {
+            Text("Predict for: \(vm.selectedDay.description)")
+        }
+        .pickerStyle(.menu)
     }
     
     private func chartView() -> some View {

@@ -48,6 +48,29 @@ enum DayPrediction: Identifiable, CaseIterable {
     }
 }
 
+struct RegressorParameters {
+    /// [1, -]
+    var maxIterations: Int = 10
+    /// [1, -]
+    var maxDepth: Int = 6
+    /// [0.0, 1.0]
+    var minLossReduction: Double = 0.0
+    /// [0.1, 1.0]
+    var minChildWeight: Double = 0.1
+    /// (0, 1)
+    var rowSubsampleRatio: Double = 0.8
+    /// (0, 1)
+    var columnSubsampleRatio: Double = 0.8
+    /// (0, 1)
+    var stepSize: Double = 0.3
+    /// [0, 1]
+    var l1Penalty: Double = 0.0
+    /// [0, 1]
+    var l2Penalty: Double = 0.01
+    /// (0, 1)
+    var convergenceThreshold: Double = 0.01
+}
+
 @Observable
 class ContentViewModel {
     
@@ -55,6 +78,7 @@ class ContentViewModel {
     @ObservationIgnored private let weatherNM: any NetworkProtocol
     
     var regressorType: RegressorType = .linear
+    var regressorParameters = RegressorParameters()
     var selectedDay: DayPrediction = .today
     var mlModel: [SkyCastModel] = []
     var predictedSkyCastModels: [SkyCastModel] = []
@@ -102,7 +126,12 @@ class ContentViewModel {
     private func buildCSVModel(openModel: OpenMeteoModel, weatherModel: WeatherAPIModel) {
         for i in 0..<openModel.hourly.time.count {
             let currentTime = openModel.hourly.time[i]
-            mlModel.append(SkyCastModel(latitude: Constants.latitude, longitude: Constants.longitude, time: currentTime, omTemp: openModel.hourly.temp[i], omFeelLike: openModel.hourly.feelLikeTemp[i], omPrecipProb: openModel.hourly.precipProb[i]))
+            mlModel.append(SkyCastModel(latitude: Constants.latitude,
+                                        longitude: Constants.longitude,
+                                        time: currentTime,
+                                        omTemp: openModel.hourly.temp[i],
+                                        omFeelLike: openModel.hourly.feelLikeTemp[i],
+                                        omPrecipProb: openModel.hourly.precipProb[i]))
         }
         
         for forecastDay in weatherModel.forecast.forecastday {
@@ -148,7 +177,7 @@ class ContentViewModel {
             try csvString.write(to: fileURL, atomically: true, encoding: .utf8)
             print("CSV file saved at: \(fileURL.path)")
 #if canImport(CreateML)
-            trainAndPredictWeatherMetrics()
+            trainAndPredict()
 #endif
         } catch {
             print("Failed to save CSV: \(error)")
@@ -156,7 +185,7 @@ class ContentViewModel {
     }
     
 #if canImport(CreateML)
-    func trainAndPredictWeatherMetrics() {
+    func trainAndPredict() {
         let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("ModelData.csv")
         
         Task { [weak self] in
@@ -193,27 +222,52 @@ class ContentViewModel {
                     let filteredData = dataframe[allColumns]
                     
                     let model: MLModel = try {
-                        switch regressorType {
+                        switch self.regressorType {
                         case .linear:
-                            let regressor = try MLLinearRegressor(trainingData: filteredData, targetColumn: target)
+                            let regressor = try MLLinearRegressor(trainingData: filteredData,
+                                                                  targetColumn: target,
+                                                                  parameters: MLLinearRegressor.ModelParameters(maxIterations: self.regressorParameters.maxIterations,
+                                                                                                                l1Penalty: self.regressorParameters.l1Penalty,
+                                                                                                                l2Penalty: self.regressorParameters.l2Penalty,
+                                                                                                                stepSize: self.regressorParameters.stepSize,
+                                                                                                                convergenceThreshold: self.regressorParameters.convergenceThreshold))
                             let modelURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(target).mlmodel")
                             try regressor.write(to: modelURL)
                             let compiledURL = try MLModel.compileModel(at: modelURL)
                             return try MLModel(contentsOf: compiledURL)
                         case .randomForest:
-                            let regressor = try MLRandomForestRegressor(trainingData: filteredData, targetColumn: target)
+                            let regressor = try MLRandomForestRegressor(trainingData: filteredData,
+                                                                        targetColumn: target,
+                                                                        parameters: MLRandomForestRegressor.ModelParameters(maxDepth: self.regressorParameters.maxDepth,
+                                                                                                                            maxIterations: self.regressorParameters.maxIterations,
+                                                                                                                            minLossReduction: self.regressorParameters.minLossReduction,
+                                                                                                                            minChildWeight: self.regressorParameters.minChildWeight,
+                                                                                                                            rowSubsample: self.regressorParameters.rowSubsampleRatio,
+                                                                                                                            columnSubsample: self.regressorParameters.columnSubsampleRatio))
                             let modelURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(target).mlmodel")
                             try regressor.write(to: modelURL)
                             let compiledURL = try MLModel.compileModel(at: modelURL)
                             return try MLModel(contentsOf: compiledURL)
                         case .boostedTree:
-                            let regressor = try MLBoostedTreeRegressor(trainingData: filteredData, targetColumn: target)
+                            let regressor = try MLBoostedTreeRegressor(trainingData: filteredData,
+                                                                       targetColumn: target,
+                                                                       parameters: MLBoostedTreeRegressor.ModelParameters(maxDepth: self.regressorParameters.maxDepth,
+                                                                                                                          maxIterations: self.regressorParameters.maxIterations,
+                                                                                                                          minLossReduction: self.regressorParameters.minLossReduction,
+                                                                                                                          minChildWeight: self.regressorParameters.minChildWeight,
+                                                                                                                          stepSize: self.regressorParameters.stepSize,
+                                                                                                                          rowSubsample: self.regressorParameters.rowSubsampleRatio,
+                                                                                                                          columnSubsample: self.regressorParameters.columnSubsampleRatio))
                             let modelURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(target).mlmodel")
                             try regressor.write(to: modelURL)
                             let compiledURL = try MLModel.compileModel(at: modelURL)
                             return try MLModel(contentsOf: compiledURL)
                         case .decisionTree:
-                            let regressor = try MLDecisionTreeRegressor(trainingData: filteredData, targetColumn: target)
+                            let regressor = try MLDecisionTreeRegressor(trainingData: filteredData,
+                                                                        targetColumn: target,
+                                                                        parameters: MLDecisionTreeRegressor.ModelParameters(maxDepth: self.regressorParameters.maxDepth,
+                                                                                                                            minLossReduction: self.regressorParameters.minLossReduction,
+                                                                                                                            minChildWeight: self.regressorParameters.minChildWeight))
                             let modelURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(target).mlmodel")
                             try regressor.write(to: modelURL)
                             let compiledURL = try MLModel.compileModel(at: modelURL)
@@ -272,22 +326,22 @@ class ContentViewModel {
                         }
                     }
                     
-                    // Precipitation is the only type out of the three that has the most 0 values all the time
-                    if target == "PRECIPITATION" {
-                        // Filter out zero actuals
-                        let filteredPairs = zip(actualValues, predictedValues).filter { Int($0.0) != 0 }
-                        let actualNonZero = filteredPairs.map { $0.0 }
-                        let predictedNonZero = filteredPairs.map { $0.1 }
-                        
-                        if actualNonZero.isEmpty {
-                            print("⚠️ No valid data to compute accuracy metrics for \(target).")
-                            return
-                        }
-                        print("📊 Skipping 0 values (only non-zero precipitation cases)...")
-                        computeAccuracyMetrics(actualValues: actualNonZero, predictedValues: predictedNonZero, target: target + " (non-zero only)")
-                    } else {
+//                    // Precipitation is the only type out of the three that has the most 0 values all the time
+//                    if target == "PRECIPITATION" {
+//                        // Filter out zero actuals
+//                        let filteredPairs = zip(actualValues, predictedValues).filter { Int($0.0) != 0 }
+//                        let actualNonZero = filteredPairs.map { $0.0 }
+//                        let predictedNonZero = filteredPairs.map { $0.1 }
+//                        
+//                        if actualNonZero.isEmpty {
+//                            print("⚠️ No valid data to compute accuracy metrics for \(target).")
+//                            return
+//                        }
+//                        print("📊 Skipping 0 values (only non-zero precipitation cases)...")
+//                        computeAccuracyMetrics(actualValues: actualNonZero, predictedValues: predictedNonZero, target: target + " (non-zero only)")
+//                    } else {
                         computeAccuracyMetrics(actualValues: actualValues, predictedValues: predictedValues, target: target)
-                    }
+//                    }
                 }
                 exportPredictedCSV()
             } catch {
