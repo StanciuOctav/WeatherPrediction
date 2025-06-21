@@ -33,7 +33,7 @@ struct ParametersSettingsView: View {
             NumericInputField(title: "Max iterations - [1, -]", numberType: .int, lowerBound: 1.0, upperBound: nil, intValue: $params.maxIterations, doubleValue: .constant(0))
             NumericInputField(title: "L1 Penalty - [0, 1]", numberType: .double, lowerBound: 0.0, upperBound: 1.0, intValue: .constant(0), doubleValue: $params.l1Penalty)
             NumericInputField(title: "L2 Penaltymp - [0, 1]", numberType: .double, lowerBound: 0.01, upperBound: 1.0, intValue: .constant(0), doubleValue: $params.l2Penalty)
-            NumericInputField(title: "Step size - (0, 1)", numberType: .double, lowerBound: 0.001, upperBound: 0.999, intValue: .constant(0), doubleValue: $params.stepSize)
+            NumericInputField(title: "Step size - [1, -]", numberType: .int, lowerBound: 1, upperBound: nil, intValue: .constant(0), doubleValue: $params.stepSize)
             NumericInputField(title: "Convergence Threshold - (0, 1)", numberType: .double, lowerBound: 0.001, upperBound: 0.999, intValue: .constant(0), doubleValue: $params.convergenceThreshold)
         }
     }

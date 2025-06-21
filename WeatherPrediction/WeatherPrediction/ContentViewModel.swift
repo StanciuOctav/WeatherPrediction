@@ -62,7 +62,7 @@ struct RegressorParameters {
     /// (0, 1)
     var columnSubsampleRatio: Double = 0.8
     /// (0, 1)
-    var stepSize: Double = 0.3
+    var stepSize: Double = 1.0
     /// [0, 1]
     var l1Penalty: Double = 0.0
     /// [0, 1]
@@ -226,7 +226,8 @@ class ContentViewModel {
                         case .linear:
                             let regressor = try MLLinearRegressor(trainingData: filteredData,
                                                                   targetColumn: target,
-                                                                  parameters: MLLinearRegressor.ModelParameters(maxIterations: self.regressorParameters.maxIterations,
+                                                                  parameters: MLLinearRegressor.ModelParameters(validation: .split(strategy: .automatic),
+                                                                                                                maxIterations: self.regressorParameters.maxIterations,
                                                                                                                 l1Penalty: self.regressorParameters.l1Penalty,
                                                                                                                 l2Penalty: self.regressorParameters.l2Penalty,
                                                                                                                 stepSize: self.regressorParameters.stepSize,
@@ -238,7 +239,8 @@ class ContentViewModel {
                         case .randomForest:
                             let regressor = try MLRandomForestRegressor(trainingData: filteredData,
                                                                         targetColumn: target,
-                                                                        parameters: MLRandomForestRegressor.ModelParameters(maxDepth: self.regressorParameters.maxDepth,
+                                                                        parameters: MLRandomForestRegressor.ModelParameters(validation: .split(strategy: .automatic),
+                                                                                                                            maxDepth: self.regressorParameters.maxDepth,
                                                                                                                             maxIterations: self.regressorParameters.maxIterations,
                                                                                                                             minLossReduction: self.regressorParameters.minLossReduction,
                                                                                                                             minChildWeight: self.regressorParameters.minChildWeight,
@@ -251,7 +253,8 @@ class ContentViewModel {
                         case .boostedTree:
                             let regressor = try MLBoostedTreeRegressor(trainingData: filteredData,
                                                                        targetColumn: target,
-                                                                       parameters: MLBoostedTreeRegressor.ModelParameters(maxDepth: self.regressorParameters.maxDepth,
+                                                                       parameters: MLBoostedTreeRegressor.ModelParameters(validation: .split(strategy: .automatic),
+                                                                                                                          maxDepth: self.regressorParameters.maxDepth,
                                                                                                                           maxIterations: self.regressorParameters.maxIterations,
                                                                                                                           minLossReduction: self.regressorParameters.minLossReduction,
                                                                                                                           minChildWeight: self.regressorParameters.minChildWeight,
@@ -265,7 +268,8 @@ class ContentViewModel {
                         case .decisionTree:
                             let regressor = try MLDecisionTreeRegressor(trainingData: filteredData,
                                                                         targetColumn: target,
-                                                                        parameters: MLDecisionTreeRegressor.ModelParameters(maxDepth: self.regressorParameters.maxDepth,
+                                                                        parameters: MLDecisionTreeRegressor.ModelParameters(validation: .split(strategy: .automatic),
+                                                                                                                            maxDepth: self.regressorParameters.maxDepth,
                                                                                                                             minLossReduction: self.regressorParameters.minLossReduction,
                                                                                                                             minChildWeight: self.regressorParameters.minChildWeight))
                             let modelURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(target).mlmodel")
@@ -327,21 +331,21 @@ class ContentViewModel {
                     }
                     
 //                    // Precipitation is the only type out of the three that has the most 0 values all the time
-//                    if target == "PRECIPITATION" {
-//                        // Filter out zero actuals
-//                        let filteredPairs = zip(actualValues, predictedValues).filter { Int($0.0) != 0 }
-//                        let actualNonZero = filteredPairs.map { $0.0 }
-//                        let predictedNonZero = filteredPairs.map { $0.1 }
-//                        
-//                        if actualNonZero.isEmpty {
-//                            print("⚠️ No valid data to compute accuracy metrics for \(target).")
-//                            return
-//                        }
-//                        print("📊 Skipping 0 values (only non-zero precipitation cases)...")
-//                        computeAccuracyMetrics(actualValues: actualNonZero, predictedValues: predictedNonZero, target: target + " (non-zero only)")
-//                    } else {
+                    if target == "PRECIPITATION" {
+                        // Filter out zero actuals
+                        let filteredPairs = zip(actualValues, predictedValues).filter { Int($0.0) != 0 }
+                        let actualNonZero = filteredPairs.map { $0.0 }
+                        let predictedNonZero = filteredPairs.map { $0.1 }
+                        
+                        if actualNonZero.isEmpty {
+                            print("⚠️ No valid data to compute accuracy metrics for \(target).")
+                            return
+                        }
+                        print("📊 Skipping 0 values (only non-zero precipitation cases)...")
+                        computeAccuracyMetrics(actualValues: actualNonZero, predictedValues: predictedNonZero, target: target + " (non-zero only)")
+                    } else {
                         computeAccuracyMetrics(actualValues: actualValues, predictedValues: predictedValues, target: target)
-//                    }
+                    }
                 }
                 exportPredictedCSV()
             } catch {
