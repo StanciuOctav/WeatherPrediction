@@ -60,5 +60,7 @@ extension Calendar {
     public static var todayDate: Date {
         let calendar = Calendar.current
         return calendar.startOfDay(for: Date())
+//        let today = calendar.startOfDay(for: Date())
+//        return calendar.date(byAdding: .day, value: -3, to: today)!
     }
 }

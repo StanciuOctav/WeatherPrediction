@@ -33,19 +33,10 @@ enum RegressorType: Identifiable, CaseIterable {
     }
 }
 
-enum DayPrediction: Identifiable, CaseIterable {
+enum DayPrediction: String, Identifiable, CaseIterable {
     var id: String { UUID().uuidString }
     
     case today, tomorrow
-    
-    var description: String {
-        switch self {
-        case .today:
-            return "Today"
-        case .tomorrow:
-            return "Tomorrow"
-        }
-    }
 }
 
 struct RegressorParameters {
@@ -66,7 +57,7 @@ struct RegressorParameters {
     /// [0, 1]
     var l1Penalty: Double = 0.0
     /// [0, 1]
-    var l2Penalty: Double = 0.01
+    var l2Penalty: Double = 0.0
     /// (0, 1)
     var convergenceThreshold: Double = 0.01
 }
@@ -186,6 +177,7 @@ class ContentViewModel {
     
 #if canImport(CreateML)
     func trainAndPredict() {
+        clearPredictedData()
         let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("ModelData.csv")
         
         Task { [weak self] in
@@ -279,7 +271,7 @@ class ContentViewModel {
                         }
                     }()
                     
-                    print("\n🔮 Predicting \(target.uppercased()) for each hour of tomorrow:")
+//                    print("\n🔮 Predicting \(target.uppercased()) for each hour of tomorrow:")
                     
                     var actualValues: [Double] = []
                     var predictedValues: [Double] = []
@@ -325,8 +317,8 @@ class ContentViewModel {
                                 predictedSkyCastModels[predictedSkyCastModels.count - 1][keyPath: keyPath] = predictedValue
                             }
                             
-                            let hourString = DateFormatter.localizedString(from: date, dateStyle: .none, timeStyle: .short)
-                            print("⏰ \(hourString): \(Int(predictedValue)) (Actual: \(actualValue))")
+//                            let hourString = DateFormatter.localizedString(from: date, dateStyle: .none, timeStyle: .short)
+//                            print("⏰ \(hourString): \(Int(predictedValue)) (Actual: \(actualValue))")
                         }
                     }
                     
@@ -366,13 +358,13 @@ class ContentViewModel {
         let ssResidual = zip(actualValues, predictedValues).map { pow($0 - $1, 2) }.reduce(0, +)
         let r2 = 1 - (ssResidual / ssTotal)
 
-        print("""
-        📊 Model Accuracy for \(target):
-        🔹 MAE: \(String(format: "%.2f", mae))
-        🔹 MSE: \(String(format: "%.2f", mse))
-        🔹 RMSE: \(String(format: "%.2f", rmse))
-        🔹 R² Score: \(String(format: "%.2f", r2))
-        """)
+//        print("""
+//        📊 Model Accuracy for \(target):
+//        🔹 MAE: \(String(format: "%.2f", mae))
+//        🔹 MSE: \(String(format: "%.2f", mse))
+//        🔹 RMSE: \(String(format: "%.2f", rmse))
+//        🔹 R² Score: \(String(format: "%.2f", r2))
+//        """)
         
         let evMetric = EvaluationMetric(target: target, mae: mae, mse: mse, rmse: rmse, r2: r2)
         evaluationMetrics.append(evMetric)

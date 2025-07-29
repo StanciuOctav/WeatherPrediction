@@ -87,6 +87,7 @@ struct ContentView: View {
             .task {
                 Task.detached(priority: .background, operation: {
                     await vm.fetchWeatherData()
+//                    await vm.trainAndPredict()
                 })
             }
             .onChange(of: vm.regressorType, { _, _ in
@@ -96,7 +97,10 @@ struct ContentView: View {
                 ToolbarItem(placement: .primaryAction) {
                     NavigationLink(destination: ParametersSettingsView(params: $vm.regressorParameters,
                                                                        typeOfRegressor: $vm.regressorType)) {
-                        Label("Set model parameters", systemImage: "gear")
+                        HStack {
+                            Text("Configure model parameters")
+                            Image(systemName: "chevron.right")
+                        }
                     }
                 }
                 
@@ -145,9 +149,9 @@ struct ContentView: View {
     
     private func selectDayPicker() -> some View {
         Picker(selection: $vm.selectedDay) {
-            ForEach(DayPrediction.allCases, id:\.self) { Text($0.description) }
+            ForEach(DayPrediction.allCases, id:\.self) { Text($0.rawValue.capitalized) }
         } label: {
-            Text("Predict for: \(vm.selectedDay.description)")
+            Text("Predict for: \(vm.selectedDay.rawValue.capitalized)")
         }
         .pickerStyle(.menu)
     }

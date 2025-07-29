@@ -32,37 +32,37 @@ struct ParametersSettingsView: View {
         VStack {
             NumericInputField(title: "Max iterations - [1, -]", numberType: .int, lowerBound: 1.0, upperBound: nil, intValue: $params.maxIterations, doubleValue: .constant(0))
             NumericInputField(title: "L1 Penalty - [0, 1]", numberType: .double, lowerBound: 0.0, upperBound: 1.0, intValue: .constant(0), doubleValue: $params.l1Penalty)
-            NumericInputField(title: "L2 Penaltymp - [0, 1]", numberType: .double, lowerBound: 0.01, upperBound: 1.0, intValue: .constant(0), doubleValue: $params.l2Penalty)
-            NumericInputField(title: "Step size - [1, -]", numberType: .int, lowerBound: 1, upperBound: nil, intValue: .constant(0), doubleValue: $params.stepSize)
-            NumericInputField(title: "Convergence Threshold - (0, 1)", numberType: .double, lowerBound: 0.001, upperBound: 0.999, intValue: .constant(0), doubleValue: $params.convergenceThreshold)
+            NumericInputField(title: "L2 Penalty - [0, 1]", numberType: .double, lowerBound: 0.00001, upperBound: 1.0, intValue: .constant(0), doubleValue: $params.l2Penalty)
+            NumericInputField(title: "Step size - [0.001, 1.0]", numberType: .double, lowerBound: 0.00001, upperBound: 1, intValue: .constant(0), doubleValue: $params.stepSize)
+            NumericInputField(title: "Convergence Threshold - (0, 1)", numberType: .double, lowerBound: 0.00001, upperBound: 0.999, intValue: .constant(0), doubleValue: $params.convergenceThreshold)
         }
     }
     private func randomForestView() -> some View {
         VStack {
             NumericInputField(title: "Max depth - [1, -]", numberType: .int, lowerBound: 1.0, upperBound: nil, intValue: $params.maxDepth, doubleValue: .constant(0))
             NumericInputField(title: "Max iterations - [1, -]", numberType: .int, lowerBound: 1.0, upperBound: nil, intValue: $params.maxIterations, doubleValue: .constant(0))
-            NumericInputField(title: "Min Loss Reduction - [0.0, 1.0]", numberType: .double, lowerBound: 0.1, upperBound: 1.0, intValue: .constant(0), doubleValue: $params.minLossReduction)
-            NumericInputField(title: "Min Child Weight - [0.1, 1.0]", numberType: .double, lowerBound: 0.1, upperBound: 1.0, intValue: .constant(0), doubleValue: $params.minChildWeight)
-            NumericInputField(title: "Row subsample ratio - (0, 1)", numberType: .double, lowerBound: 0.001, upperBound: 0.999, intValue: .constant(0), doubleValue: $params.rowSubsampleRatio)
-            NumericInputField(title: "Column subsample ratio - (0, 1)", numberType: .double, lowerBound: 0.001, upperBound: 0.999, intValue: .constant(0), doubleValue: $params.columnSubsampleRatio)
+            NumericInputField(title: "Min Loss Reduction - [0.001, 1.0]", numberType: .double, lowerBound: 0.00001, upperBound: 1.0, intValue: .constant(0), doubleValue: $params.minLossReduction)
+            NumericInputField(title: "Min Child Weight - [0.001, -]", numberType: .double, lowerBound: 0.00001, upperBound: nil, intValue: .constant(0), doubleValue: $params.minChildWeight)
+            NumericInputField(title: "Row subsample ratio - (0, 1)", numberType: .double, lowerBound: 0.0001, upperBound: 0.999, intValue: .constant(0), doubleValue: $params.rowSubsampleRatio)
+            NumericInputField(title: "Column subsample ratio - (0, 1)", numberType: .double, lowerBound: 0.00001, upperBound: 0.999, intValue: .constant(0), doubleValue: $params.columnSubsampleRatio)
         }
     }
     private func boostedView() -> some View {
         VStack {
             NumericInputField(title: "Max depth - [1, -]", numberType: .int, lowerBound: 1.0, upperBound: nil, intValue: $params.maxDepth, doubleValue: .constant(0))
             NumericInputField(title: "Max iterations - [1, -]", numberType: .int, lowerBound: 1.0, upperBound: nil, intValue: $params.maxIterations, doubleValue: .constant(0))
-            NumericInputField(title: "Min Loss Reduction - [0.0, 1.0]", numberType: .double, lowerBound: 0.1, upperBound: 1.0, intValue: .constant(0), doubleValue: $params.minLossReduction)
-            NumericInputField(title: "Min Child Weight - [0.1, 1.0]", numberType: .double, lowerBound: 0.1, upperBound: 1.0, intValue: .constant(0), doubleValue: $params.minChildWeight)
-            NumericInputField(title: "Step size - (0, 1)", numberType: .double, lowerBound: 0.001, upperBound: 0.999, intValue: .constant(0), doubleValue: $params.stepSize)
-            NumericInputField(title: "Row subsample ratio - (0, 1)", numberType: .double, lowerBound: 0.001, upperBound: 0.999, intValue: .constant(0), doubleValue: $params.rowSubsampleRatio)
-            NumericInputField(title: "Column subsample ratio - (0, 1)", numberType: .double, lowerBound: 0.001, upperBound: 0.999, intValue: .constant(0), doubleValue: $params.columnSubsampleRatio)
+            NumericInputField(title: "Min Loss Reduction - [0.001, 1.0]", numberType: .double, lowerBound: 0.00001, upperBound: 1.0, intValue: .constant(0), doubleValue: $params.minLossReduction)
+            NumericInputField(title: "Min Child Weight - [0.001, 1.0]", numberType: .double, lowerBound: 0.00001, upperBound: 1.0, intValue: .constant(0), doubleValue: $params.minChildWeight)
+            NumericInputField(title: "Step size - (0, 1)", numberType: .double, lowerBound: 0.00001, upperBound: 0.999, intValue: .constant(0), doubleValue: $params.stepSize)
+            NumericInputField(title: "Row subsample ratio - (0.001, 1)", numberType: .double, lowerBound: 0.00001, upperBound: 0.999, intValue: .constant(0), doubleValue: $params.rowSubsampleRatio)
+            NumericInputField(title: "Column subsample ratio - (0.001, 1)", numberType: .double, lowerBound: 0.00001, upperBound: 0.999, intValue: .constant(0), doubleValue: $params.columnSubsampleRatio)
         }
     }
     private func decisionView() -> some View {
         VStack {
             NumericInputField(title: "Max depth - [1, -]", numberType: .int, lowerBound: 1.0, upperBound: nil, intValue: $params.maxDepth, doubleValue: .constant(0))
-            NumericInputField(title: "Min Loss Reduction - [0.0, 1.0]", numberType: .double, lowerBound: 0.1, upperBound: 1.0, intValue: .constant(0), doubleValue: $params.minLossReduction)
-            NumericInputField(title: "Min Child Weight - [0.1, 1.0]", numberType: .double, lowerBound: 0.1, upperBound: 1.0, intValue: .constant(0), doubleValue: $params.minChildWeight)
+            NumericInputField(title: "Min Loss Reduction - [0.0, 1.0]", numberType: .double, lowerBound: 0.00001, upperBound: 1.0, intValue: .constant(0), doubleValue: $params.minLossReduction)
+            NumericInputField(title: "Min Child Weight - [0.1, 1.0]", numberType: .double, lowerBound: 0.00001, upperBound: nil, intValue: .constant(0), doubleValue: $params.minChildWeight)
         }
     }
 }
@@ -98,7 +98,7 @@ struct NumericInputField: View {
             if numberType == .int {
                 inputText = "\(intValue)"
             } else if numberType == .double {
-                inputText = String(format: "%.2f", doubleValue)
+                inputText = String(format: "%.5f", doubleValue)
             }
         }
     }
